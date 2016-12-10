@@ -232,7 +232,7 @@ def text_test_bitarrays():
     from timeit import timeit
     from asizeof import asizeof
 
-    words = re.findall(r'\w+', open('shakespeare.txt').read().lower())
+    words = re.findall(r'\w+', open('test/shakespeare.txt').read().lower())
     print('{length} words in the document'.format(length=len(words)))
 
     epsilon = 0.001
