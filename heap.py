@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import heapq
 
 
@@ -38,3 +39,6 @@ class MinHeap(object):
 
     def __str__(self):
         return str(self.heap)
+
+    def __getitem__(self, item):
+        return self.heap.__getitem__(item)

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import abc
 import numpy
 import bitarray
@@ -51,6 +52,13 @@ class SketchTable(object):
         :return: The new value at that index (since the caller doesn't know what it will be)
         """
         raise NotImplemented("Implement this")
+
+    def to_vector(self):
+        """
+        Transform the internal table to a single-dimensional vector
+        :return: A vector containing the entire table
+        """
+        return numpy.array(reduce(lambda a, b: a + b, self.table))
 
 
 class ListBackedSketchTable(SketchTable):
@@ -113,8 +121,11 @@ class NumpyMatrixBackedSketchTable(SketchTable):
         self.table[depth, index] += value
         return self.table[depth, index]
 
+    def to_vector(self):
+        return numpy.reshape(self.table, -1)
 
-SIZE_TO_STRUCT_FORMAT = {8: '<B', 16: '<H', 32: '<L', 64: '<Q'}
+
+SIZE_TO_STRUCT_FORMAT = {8: 'B', 16: 'H', 32: 'L', 64: 'Q'}
 
 
 class BitarrayBackedSketchTable(SketchTable):
@@ -125,45 +136,6 @@ class BitarrayBackedSketchTable(SketchTable):
     """
     def __init__(self, depth, width, counter_size_bits=16):
         super(BitarrayBackedSketchTable, self).__init__(depth, width)
-        if counter_size_bits not in SIZE_TO_STRUCT_FORMAT:
-            raise ValueError('Counter size must currently be a power of two between 8 and 64')
-
-        self.counter_size = counter_size_bits
-        self.table = [bitarray.bitarray([False]) * width * counter_size_bits for _ in range(depth)]
-
-    def get(self, depth, index):
-        counter_index = self.counter_size * index
-        return int(self._get_value_from_bitarray(counter_index, depth).to01(), 2)
-
-    def _get_value_from_bitarray(self, counter_index, depth):
-        return self.table[depth][counter_index:counter_index + self.counter_size]
-
-    def set(self, depth, index, value):
-        if value >= 2 ** self.counter_size:
-            raise ValueError('Counter would overflow after this operation')
-
-        counter_index = self.counter_size * index
-
-        binary_value = bin(value)[2:].zfill(self.counter_size)
-        self._set_value_to_bitarray(binary_value, counter_index, depth)
-
-    def _set_value_to_bitarray(self, binary_value, counter_index, depth):
-        self.table[depth][counter_index:counter_index + self.counter_size] = bitarray.bitarray(binary_value)
-
-    def increment(self, depth, index, value=1):
-        value += self.get(depth, index)
-        self.set(depth, index, value)
-        return value
-
-
-class BitarrayBackedSketchTableWithStruct(SketchTable):
-    """
-    A SketchTable backed by a list of bitarrays
-
-    By default uses 16 bits for each counter - could be more or less based on the counter_size_bits parameter
-    """
-    def __init__(self, depth, width, counter_size_bits=16):
-        super(BitarrayBackedSketchTableWithStruct, self).__init__(depth, width)
         if counter_size_bits not in SIZE_TO_STRUCT_FORMAT:
             raise ValueError('Counter size must currently be a power of two between 8 and 64')
 
@@ -195,4 +167,7 @@ class BitarrayBackedSketchTableWithStruct(SketchTable):
         self.set(depth, index, value)
         return value
 
+    def to_vector(self):
+        unpacked_rows = [struct.unpack(self.struct_format * self.width, table_row) for table_row in self.table]
+        return numpy.array(reduce(lambda a, b: a + b, unpacked_rows))
 
