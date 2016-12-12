@@ -4,6 +4,10 @@ import numpy
 import bitarray
 import array
 import struct
+from functools import reduce
+
+
+POSITIVE_INFINITY = float('inf')
 
 
 class SketchTable(object):
@@ -20,6 +24,7 @@ class SketchTable(object):
         """
         self.depth = depth
         self.width = width
+        self.table = None
 
     @abc.abstractmethod
     def get(self, depth, index):
@@ -59,6 +64,39 @@ class SketchTable(object):
         :return: A vector containing the entire table
         """
         return numpy.array(reduce(lambda a, b: a + b, self.table))
+
+    def __iter__(self):
+        """
+        A naive iteration strategy, assuming that self.table is iterable,
+        and that its rows are also iterable. Subclasses should override
+        if a different iteration strategy is preferable, or this one
+        is insensible
+        :return: Yielding one item at a time.
+        """
+        for row in self.table:
+            for item in row:
+                yield item
+
+    def decrement_all(self, upper_bound=None, lower_bound=0):
+        """
+        A decrement-all operation designed to support lossy counting - see
+        Goyal and Daumé (2011): http://www.umiacs.umd.edu/~amit/Papers/goyalLCUSketchAAAI11.pdf
+
+        When this function is called, it iterates through all items, and
+        decrements whichever match the bounds. The un-intuitive ordering
+        of arguments stems from the fact that in many cases it makes
+        more sense to change the upper bound (LCU-1, LCU-WS, LCU-SWS),
+        while none I've seen so far attempt to change the lower bound.
+        :param upper_bound: The upper bound, inclusive, to decrement in
+        :param lower_bound: The lower bound, exclusive, to decrement in
+        :return: None; all relevant items decremented
+        """
+        if upper_bound is None:
+            upper_bound = POSITIVE_INFINITY
+
+        for item in self:
+            if lower_bound < item <= upper_bound:
+                item -= 1
 
 
 class ListBackedSketchTable(SketchTable):
@@ -124,6 +162,9 @@ class NumpyMatrixBackedSketchTable(SketchTable):
     def to_vector(self):
         return numpy.reshape(self.table, -1)
 
+    def __iter__(self):
+        return numpy.nditer(self.table)
+
 
 SIZE_TO_STRUCT_FORMAT = {8: 'B', 16: 'H', 32: 'L', 64: 'Q'}
 
@@ -144,23 +185,14 @@ class BitarrayBackedSketchTable(SketchTable):
         self.table = [bitarray.bitarray([False]) * width * counter_size_bits for _ in range(depth)]
 
     def get(self, depth, index):
-        counter_index = self.counter_size * index
-        return struct.unpack(self.struct_format, self._get_value_from_bitarray(counter_index, depth).tobytes())[0]
-
-    def _get_value_from_bitarray(self, counter_index, depth):
-        return self.table[depth][counter_index:counter_index + self.counter_size]
+        return self._bits_to_number(self._get_value_from_bits(index, depth))
 
     def set(self, depth, index, value):
         if value >= 2 ** self.counter_size:
             raise ValueError('Counter would overflow after this operation')
 
-        binary_value = bitarray.bitarray()
-        binary_value.frombytes(struct.pack(self.struct_format, value))
-        self._set_value_to_bitarray(binary_value, depth, index)
-
-    def _set_value_to_bitarray(self, binary_value, depth, index):
-        counter_index = self.counter_size * index
-        self.table[depth][counter_index:counter_index + self.counter_size] = binary_value
+        binary_value = self._to_bits(value)
+        self._set_value_to_bits(binary_value, depth, index)
 
     def increment(self, depth, index, value=1):
         value += self.get(depth, index)
@@ -171,3 +203,40 @@ class BitarrayBackedSketchTable(SketchTable):
         unpacked_rows = [struct.unpack(self.struct_format * self.width, table_row) for table_row in self.table]
         return numpy.array(reduce(lambda a, b: a + b, unpacked_rows))
 
+    def decrement_all(self, upper_bound=POSITIVE_INFINITY, lower_bound=0):
+        """
+        Overriding the default implementation to avoid packing and unpacking whenever unnecessary
+        :param upper_bound: The upper bound, inclusive, to decrement in
+        :param lower_bound: The lower bound, exclusive, to decrement in
+        :return: None; all relevant items decremented
+        """
+        # TODO: If feeling adventurous, benchmark against unpacking all values,
+        # TODO: and then decrementing the necessary ones
+        lower_bound_bits = self._to_bits(lower_bound)
+
+        if upper_bound is None or upper_bound == POSITIVE_INFINITY:
+            upper_bound = (2 ** self.counter_size) - 1
+
+        upper_bound_bits = self._to_bits(upper_bound)
+
+        for depth in range(self.depth):
+            for index in range(self.width):
+                value = self._get_value_from_bits(index, depth)
+                if lower_bound_bits < value <= upper_bound_bits:
+                    self.set(depth, index, value - 1)
+
+    def _bits_to_number(self, bits):
+        return struct.unpack(self.struct_format, bits.tobytes())[0]
+
+    def _get_value_from_bits(self, index, depth):
+        counter_index = self.counter_size * index
+        return self.table[depth][counter_index:counter_index + self.counter_size]
+
+    def _to_bits(self, value):
+        binary_value = bitarray.bitarray()
+        binary_value.frombytes(struct.pack(self.struct_format, value))
+        return binary_value
+
+    def _set_value_to_bits(self, binary_value, depth, index):
+        counter_index = self.counter_size * index
+        self.table[depth][counter_index:counter_index + self.counter_size] = binary_value

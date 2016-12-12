@@ -7,18 +7,28 @@ class LeastSquaresTopNSketch(TopNCountMinSketch):
     A least-squares estimator for count-min sketches, as introduced by Lee, Lui, Yoon, & Zhang:
      https://www.usenix.org/legacy/event/imc05/tech/full_papers/lee/lee.pdf
     """
-    def __init__(self, epsilon, delta, n=DEFAULT_N, table_class=ListBackedSketchTable):
-        super(LeastSquaresTopNSketch, self).__init__(epsilon, delta, n, table_class)
+    def __init__(self, delta, epsilon, n=DEFAULT_N,
+                 table_class=ListBackedSketchTable,
+                 hash_strategy=NaiveHashingStrategy,
+                 update_strategy=NaiveUpdateStrategy,
+                 lossy_strategy=NoLossyUpdateStrategy):
+        super(LeastSquaresTopNSketch, self).__init__(delta, epsilon, n=n,
+                                                     table_class=table_class,
+                                                     hash_strategy=hash_strategy,
+                                                     update_strategy=update_strategy,
+                                                     lossy_strategy=NoLossyUpdateStrategy)
 
     def most_common(self, k=None):
         """
         Generate a better estimate for the top k most-common entries using the least squares estimator
         We always solve the solution for the entire top n, and return the first k, to allow for more
         accuracy if only a subset is wanted (as the rest end up being used as noise variables
-        :param self:
-        :param k:
+        :param k: The number of top results to return - <= to n
         :return:
         """
+        if k is None or  k > self.n:
+            k = self.n
+
         b_vector = self.table.to_vector()
         a_matrix = numpy.zeros((self.table.depth * self.table.width, self.n + 1))
 

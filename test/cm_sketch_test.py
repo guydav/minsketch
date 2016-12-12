@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from double_hashing_count_min_sketch import *
+from double_hashing import *
 from least_squares_sketch import LeastSquaresTopNSketch
 
 import re
@@ -14,10 +14,10 @@ import copy
 
 def test():
     count = 100000
-    numbers = [random.randint(1, ARBITRARY_LARGE_PRIME_NUMBER - 1) for _ in xrange(count)]
-    counts = [random.randint(10, 1000) for _ in xrange(count)]
+    numbers = [random.randint(1, ARBITRARY_LARGE_PRIME_NUMBER - 1) for _ in range(count)]
+    counts = [random.randint(10, 1000) for _ in range(count)]
 
-    cms = TopNCountMinSketch(0.005, 10 ** -7)
+    cms = TopNCountMinSketch(10 ** -7, 0.005)
 
     for (number, count) in izip(numbers, counts):
         cms.insert(number, count)
@@ -28,7 +28,7 @@ def test():
     percent_error = 0
 
     for i in range(count):
-        error = float(cms.point_query(numbers[i]) - counts[i])
+        error = float(cms.get(numbers[i]) - counts[i])
         total_error += error
         percent_error = error / counts[i]
 
@@ -42,10 +42,10 @@ def text_test(text_file_name, epsilon, delta):
     print('{length} words in the document'.format(length=len(words)))
 
     sketches = SortedDict(
-        list=TopNCountMinSketch(epsilon, delta, table_class=ListBackedSketchTable),
-        array=TopNCountMinSketch(epsilon, delta, table_class=ArrayBackedSketchTable),
-        matrix=TopNCountMinSketch(epsilon, delta, table_class=NumpyMatrixBackedSketchTable),
-        bitarray=TopNCountMinSketch(epsilon, delta, table_class=BitarrayBackedSketchTable),
+        list=TopNCountMinSketch(delta, epsilon, table_class=ListBackedSketchTable),
+        array=TopNCountMinSketch(delta, epsilon, table_class=ArrayBackedSketchTable),
+        matrix=TopNCountMinSketch(delta, epsilon, table_class=NumpyMatrixBackedSketchTable),
+        bitarray=TopNCountMinSketch(delta, epsilon, table_class=BitarrayBackedSketchTable),
         counter=Counter())
 
     benchmark(words, sketches)
@@ -71,34 +71,35 @@ def run_single_benchmark(sketches, benchmark_func):
 
 
 def most_common_comparison(sketches, n):
-    top_10s = run_single_benchmark(sketches, lambda sketch: sketch.most_common(n))
+    # top_10s = run_single_benchmark(sketches,
+    #                                lambda sketch: sketch.most_common(n / 2))
 
+    counter = sketches['counter']
+    mc = {key : value for key, value in counter.most_common(n)}
     top_n_by_sketch = SortedDict()
-    for name, result in izip(sketches.keys(), top_10s):
+    for name in sketches.keys():
         ordered_results = SortedDict()
-        for key, value in result:
-            ordered_results[key] = value
+        for key in mc:
+            ordered_results[key] = sketches[name].get(key)
 
         top_n_by_sketch[name] = ordered_results
 
-    counter_results = copy.copy(top_n_by_sketch['counter'])
-
     for top_n in top_n_by_sketch.values():
         for key in top_n:
-            top_n[key] -= counter_results[key]
+            top_n[key] -= counter[key]
 
     diff_results = [[key] + [top_n[key] for top_n in top_n_by_sketch.values()]
-                    for key in top_n_by_sketch.values()[0].keys()]
+                    for key in mc]
     header = ['Item'] + list(sketches.keys())
     print(tabulate(diff_results, header, tablefmt='fancy_grid'))
 
     top_n_percent_over = copy.deepcopy(top_n_by_sketch)
     for top_n in top_n_percent_over.values():
         for key in top_n:
-            top_n[key] /= float(counter_results[key])
+            top_n[key] /= float(counter[key])
 
     percent_results = [[key] + [top_n[key] for top_n in top_n_percent_over.values()]
-                       for key in top_n_by_sketch.values()[0].keys()]
+                       for key in mc]
     percent_results.append(['Sum Total'] + [sum(top_n.values()) for top_n in top_n_percent_over.values()])
     print(tabulate(percent_results, header, tablefmt='fancy_grid'))
 
@@ -108,9 +109,9 @@ def test_double_hashing(text_file_name, epsilon, delta, n=DEFAULT_N):
     print('{length} words in the document'.format(length=len(words)))
 
     sketches = SortedDict(
-        array=TopNCountMinSketch(epsilon, delta, n=n, table_class=ArrayBackedSketchTable),
-        array_hash_pair=HashPairCMSketch(epsilon, n=n, table_class=ArrayBackedSketchTable),
-        array_hash_pair_multi=MultiHashPairTopNCMSketch(epsilon, delta, n=n, table_class=ArrayBackedSketchTable),
+        array=TopNCountMinSketch(delta, epsilon, table_class=ArrayBackedSketchTable),
+        array_hash_pair=HashPairCMSketch(delta=n, epsilon=epsilon, table_class=ArrayBackedSketchTable),
+        array_hash_pair_multi=MultiHashPairTopNCMSketch(delta, epsilon, table_class=ArrayBackedSketchTable),
         counter=Counter())
 
     benchmark(words, sketches)
@@ -142,10 +143,31 @@ def test_least_squares(text_file_name, epsilon, delta, n=DEFAULT_N):
     print('{length} words in the document'.format(length=len(words)))
 
     sketches = SortedDict(
-        array=TopNCountMinSketch(epsilon, delta, n=n, table_class=ArrayBackedSketchTable),
-        array_hash_pair=HashPairCMSketch(epsilon, n=n, table_class=ArrayBackedSketchTable),
-        array_hash_pair_multi=MultiHashPairTopNCMSketch(epsilon, delta, n=n, table_class=ArrayBackedSketchTable),
-        least_squares=LeastSquaresTopNSketch(epsilon, delta, n=n, table_class=ArrayBackedSketchTable),
+        array=TopNCountMinSketch(delta, epsilon, table_class=ArrayBackedSketchTable),
+        array_hash_pair=HashPairCMSketch(delta=n, epsilon=epsilon, table_class=ArrayBackedSketchTable),
+        array_hash_pair_multi=MultiHashPairTopNCMSketch(delta, epsilon, table_class=ArrayBackedSketchTable),
+        least_squares=LeastSquaresTopNSketch(delta, epsilon, table_class=ArrayBackedSketchTable),
+        counter=Counter())
+
+    benchmark(words, sketches)
+    most_common_comparison(sketches, n)
+
+
+def test_update_strategies(text_file_name, epsilon, delta, n=DEFAULT_N):
+    words = re.findall(r'\w+', open(text_file_name).read().lower())
+    print('{length} words in the document'.format(length=len(words)))
+    # Using 5 * n here to account for different values in the exact top n
+    n *= 5
+
+    sketches = SortedDict(
+        array=TopNCountMinSketch(delta, epsilon, n=n, table_class=ArrayBackedSketchTable),
+        array_hash_pair=HashPairCMSketch(delta, epsilon, n=n, table_class=ArrayBackedSketchTable),
+        array_conservative=TopNCountMinSketch(delta, epsilon, n=n,
+                                              table_class=ArrayBackedSketchTable,
+                                              update_strategy=ConservativeUpdateStrategy),
+        array_hash_pair_conservative=HashPairCMSketch(delta, epsilon, n=n,
+                                                      table_class=ArrayBackedSketchTable,
+                                                      update_strategy=ConservativeUpdateStrategy),
         counter=Counter())
 
     benchmark(words, sketches)
@@ -155,4 +177,5 @@ if __name__ == '__main__':
     # text_test('shakespeare.txt', 0.001, 10 ** -7)
     # test_double_hashing('shakespeare.txt', 0.001, 10 ** -5, 20)
     # test_to_vector()
-    test_least_squares('shakespeare.txt', 0.001, 10 ** -5, 10)
+    # test_least_squares('shakespeare.txt', 0.001, 10 ** -5, 10)
+    test_update_strategies('shakespeare.txt', 0.01, 10 ** -4, 10)
