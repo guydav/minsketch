@@ -1,4 +1,4 @@
-from count_min_sketch import *
+# -*- coding: utf-8 -*-
 from double_hashing_count_min_sketch import *
 from least_squares_sketch import LeastSquaresTopNSketch
 
