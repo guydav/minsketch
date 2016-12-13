@@ -28,7 +28,9 @@ Reference
 TODO
 ----
 
-- #TODO: Fill this
+- Add a hybrid Counter into Count-Min sketch object to enjoy the best of both worlds
+- Add some benchmark results to the documentation
+- Consider adding some benchmark graphs?
 
 Installation
 ------------
