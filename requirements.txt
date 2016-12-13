@@ -1,4 +1,0 @@
-bitarray
-gmpy2
-mock
-numpy
