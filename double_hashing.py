@@ -56,7 +56,7 @@ class MultiHashPairTopNCMSketch(TopNCountMinSketch):
     r"""From the previously referenced paper: \
     "Given such a result, it is straightforward to obtain a variation that uses \
     :math:`2\frac{\ln \frac{1}{\delta}}{\ln \frac{1}{\epsilon}}` pairwise independent hash functions and achieves \
-    the desired failure probability :matm:`\delta`: simply build \
+    the desired failure probability :math:`\delta`: simply build \
     :math:`2\frac{\ln \frac{1}{\delta}}{\ln \frac{1}{\epsilon}}` \
     independent copies of this data structure, and always answer a point query with the minimum estimate\
     given by one of those copies.
