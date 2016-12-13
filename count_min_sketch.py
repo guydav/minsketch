@@ -10,7 +10,6 @@ from update_strategy import *
 from lossy_strategy import *
 
 import math
-
 from itertools import izip
 
 

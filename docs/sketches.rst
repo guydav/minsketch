@@ -22,7 +22,7 @@ Count-Min-Mean Sketch
 
 count_mean_sketch.py
 
-.. automodule:: minsketch.count_mean_sketch
+.. automodule:: count_mean_sketch
     :members:
 
 Least-Squares Estimating Sketch
@@ -30,6 +30,6 @@ Least-Squares Estimating Sketch
 
 least_squares_sketch.py
 
-.. automodule:: minsketch.least_squares_sketch
+.. automodule:: least_squares_sketch
     :members:
 
