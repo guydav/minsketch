@@ -6,7 +6,7 @@ Plain-Old Count-Min Sketch
 
 count_min_sketch.py
 
-.. automodule:: minsketch.count_min_sketch
+.. automodule:: count_min_sketch
     :members:
 
 Double-Hashing Count-Min Sketch
@@ -14,7 +14,7 @@ Double-Hashing Count-Min Sketch
 
 double_hashing.py
 
-.. automodule:: minsketch.double_hashing
+.. automodule:: double_hashing
     :members:
 
 Count-Min-Mean Sketch

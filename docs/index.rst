@@ -21,6 +21,7 @@ Reference
 .. toctree::
    :maxdepth: 2
 
+   index
    sketches
    strategies
    references
