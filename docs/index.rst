@@ -30,6 +30,7 @@ TODO
 ----
 
 - Add a hybrid Counter into Count-Min sketch object to enjoy the best of both worlds
+- PyPi installation
 - Add some benchmark results to the documentation
 - Consider adding some benchmark graphs?
 
