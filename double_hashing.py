@@ -58,8 +58,8 @@ class MultiHashPairTopNCMSketch(TopNCountMinSketch):
     :math:`2\frac{\ln \frac{1}{\delta}}{\ln \frac{1}{\epsilon}}` pairwise independent hash functions and achieves \
     the desired failure probability :math:`\delta`: simply build \
     :math:`2\frac{\ln \frac{1}{\delta}}{\ln \frac{1}{\epsilon}}` \
-    independent copies of this data structure, and always answer a point query with the minimum estimate\
-    given by one of those copies.
+    independent copies of this data structure, and always answer a point query with the minimum estimate \
+    given by one of those copies."
 
     I believe the second 2 is a mistake - so I only build \
     :math:`\frac{\ln \frac{1}{\delta}}{\ln \frac{1}{\epsilon}}` rounded up sketches.
