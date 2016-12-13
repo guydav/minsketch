@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
+"""An OOP wrapper of Python's built-in heapq - a min heap
+"""
+
 import heapq
 
 
 class MinHeap(object):
-    """
-    An OOP wrapper of Python's built-in heapq - a min heap
-    """
     def __init__(self, data=None):
         if data is not None:
             self.heap = heapq.heapify(data)

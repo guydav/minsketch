@@ -1,32 +1,30 @@
 # -*- coding: utf-8 -*-
+"""A least-squares estimator for count-min sketches, as introduced by Lee, Lui, Yoon, & Zhang:
+https://www.usenix.org/legacy/event/imc05/tech/full_papers/lee/lee.pdf
+"""
 from count_min_sketch import *
 
 
 class LeastSquaresTopNSketch(TopNCountMinSketch):
-    """
-    A least-squares estimator for count-min sketches, as introduced by Lee, Lui, Yoon, & Zhang:
-     https://www.usenix.org/legacy/event/imc05/tech/full_papers/lee/lee.pdf
-    """
-    def __init__(self, delta, epsilon, n=DEFAULT_N,
-                 table_class=ListBackedSketchTable,
-                 hash_strategy=NaiveHashingStrategy,
-                 update_strategy=NaiveUpdateStrategy,
-                 lossy_strategy=NoLossyUpdateStrategy):
-        super(LeastSquaresTopNSketch, self).__init__(delta, epsilon, n=n,
-                                                     table_class=table_class,
-                                                     hash_strategy=hash_strategy,
-                                                     update_strategy=update_strategy,
-                                                     lossy_strategy=NoLossyUpdateStrategy)
-
     def most_common(self, k=None):
-        """
-        Generate a better estimate for the top k most-common entries using the least squares estimator
+        """Generate a better estimate for the top k most-common entries using the least squares estimator
         We always solve the solution for the entire top n, and return the first k, to allow for more
-        accuracy if only a subset is wanted (as the rest end up being used as noise variables
+        accuracy if only a subset is wanted (as the rest end up being used as noise variables).
+
+        Formally, we construct $\vec{b}$ as a concatenation of the tables rows, implemented by
+        table.to_vector(). $\vec{b}$ is thus (table.depth * table.width) x 1.
+        We construct \textbf{A} as having the same number or rows as $\vec{b}$, and having $k + 1$ columns,
+        using the following values, for $i \in \{0, 1, ..., \text{table.width} - 1\}$
+        and $j \in \{0, 1, ..., \text{table.depth} - 1 \}$, we set $A_{\text{table.depth} * i + j + 1, l} = 1$
+         if either the item $x_l$ is hashed into $T[i][j]$, or if $l = \text{table.width} + 1$, and otherwise
+         we leave it as 0.
+
+         We then solve using least-squares estimation (using the pseudoinverse) $A\vec{x}=\vec{b}$, sort the results
+         in a descending fashion (discading the noise), and report the top k entries.
         :param k: The number of top results to return - <= to n
-        :return:
+        :return: The least-squares estimate for how often these top k appeared
         """
-        if k is None or  k > self.n:
+        if k is None or k > self.n:
             k = self.n
 
         b_vector = self.table.to_vector()

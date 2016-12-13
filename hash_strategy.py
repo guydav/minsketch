@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+"""Implements two basic hashing strategies - a universal hashing function as described by Cormen et al.,
+and a hash-pair strategy as discussed by Kirsch and Mitzenmacher (2008).
+"""
 import random
 
 
@@ -6,9 +9,10 @@ ARBITRARY_LARGE_PRIME_NUMBER = 4294967291  # Largest 32 bit prime
 
 
 class UniversalHashFunctionGenerator(object):
-    """
-    Implementation of a universal hash function family generator, as described in
+    """Implementation of a universal hash function family generator, as described in
     Cormen et al.'s Introduction to Algorithms.
+
+    The sets are used to guarantee independence between the hash functions in this family
     """
     def __init__(self, m):
         self.a_set = {None, }
@@ -30,6 +34,8 @@ class UniversalHashFunctionGenerator(object):
 
 
 class NaiveHashingStrategy(object):
+    """An implementation of the basic hashing strategy, using a different member of a universal function for each row
+    """
     def __init__(self, depth, width, hash_gen=None):
         self.depth = depth
         self.width = width
@@ -45,9 +51,10 @@ class NaiveHashingStrategy(object):
 
 
 class DoubleHashingStrategy(object):
-    """
-    A single hash-pair count-min hashing scheme, based on Kirsch & Mitzenmacher (2008):
+    """A single hash-pair count-min hashing scheme, based on Kirsch & Mitzenmacher (2008):
     https://www.eecs.harvard.edu/~michaelm/postscripts/rsa2008.pdf
+
+    Each item (x) is hashed as: $ h_1(x) + j * h_2(x) \forall j \in \{0, 1, ..., d - 1\} $
     """
     def __init__(self, depth, width, hash_gen=None):
         self.depth = depth
