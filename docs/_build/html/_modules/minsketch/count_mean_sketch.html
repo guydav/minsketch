@@ -1,0 +1,160 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>minsketch.count_mean_sketch &#8212; minsketch 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for minsketch.count_mean_sketch</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;This model implements count-mean-min sketches, as described by Goyal and Daumé (2011):</span>
+<span class="sd">http://www.aclweb.org/anthology/D12-1100</span>
+
+<span class="sd">The design here is a little iffy - there&#39;s a fair amount of code duplication between the</span>
+<span class="sd"> two classes. Perhaps a mixin would fit better, or changing the abstractions.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">count_min_sketch</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">double_hashing</span> <span class="k">import</span> <span class="n">HashPairCMSketch</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="k">import</span> <span class="n">median</span>
+
+
+<span class="c"># TODO: Re-consider the design here at some point - Mixins? Different abstraction?</span>
+
+
+<div class="viewcode-block" id="CountMeanMinSketch"><a class="viewcode-back" href="../../sketches.html#minsketch.count_mean_sketch.CountMeanMinSketch">[docs]</a><span class="k">class</span> <span class="nc">CountMeanMinSketch</span><span class="p">(</span><span class="n">TopNCountMinSketch</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A count-mean-min sketch, based on the regular TopNCountMinSketch.</span>
+
+<span class="sd">     The two main changes include using error-estimates from the updater (regular or conservative),</span>
+<span class="sd">     and returning min between the minimum of the regularly queried values, and the median of the values</span>
+<span class="sd">     after accounting for the error estimates.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="n">hashes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hash</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">hashes</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="o">.</span><span class="n">depth</span><span class="p">)]</span>
+        <span class="n">error_estimates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">updater</span><span class="o">.</span><span class="n">count_mean_error_estimates</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">min</span><span class="p">(</span><span class="n">median</span><span class="p">(</span><span class="nb">sorted</span><span class="p">([</span><span class="n">value</span> <span class="o">-</span> <span class="n">error</span> <span class="k">for</span> <span class="n">value</span><span class="p">,</span> <span class="n">error</span> <span class="ow">in</span> <span class="n">izip</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">error_estimates</span><span class="p">)])),</span>
+                   <span class="nb">min</span><span class="p">(</span><span class="n">values</span><span class="p">))</span>
+
+<div class="viewcode-block" id="CountMeanMinSketch.most_common"><a class="viewcode-back" href="../../sketches.html#minsketch.count_mean_sketch.CountMeanMinSketch.most_common">[docs]</a>    <span class="k">def</span> <span class="nf">most_common</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="k">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Re-query the top-n keys using the count-mean query algorithm,</span>
+<span class="sd">        and then return the top k of the re-queried results</span>
+<span class="sd">        :param k: The number of top items to return, at most n, as this function was initialized</span>
+<span class="sd">        :return: The top k items observed by this CM sketch, and how often they were seen</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">mean_values</span> <span class="o">=</span> <span class="p">[(</span><span class="n">key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">))</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">top_n</span><span class="p">]</span>
+        <span class="n">mean_values</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">pair</span><span class="p">:</span> <span class="n">pair</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">reverse</span><span class="o">=</span><span class="k">True</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">k</span> <span class="ow">is</span> <span class="k">None</span> <span class="ow">or</span> <span class="n">k</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">:</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span>
+
+        <span class="k">return</span> <span class="n">mean_values</span><span class="p">[:</span><span class="n">k</span><span class="p">]</span></div></div>
+
+
+<div class="viewcode-block" id="HashPairCountMeanMinSketch"><a class="viewcode-back" href="../../sketches.html#minsketch.count_mean_sketch.HashPairCountMeanMinSketch">[docs]</a><span class="k">class</span> <span class="nc">HashPairCountMeanMinSketch</span><span class="p">(</span><span class="n">HashPairCMSketch</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A count-mean-min sketch, based on the HashPair CM SKETCH.</span>
+
+<span class="sd">         The two main changes include using error-estimates from the updater (regular or conservative),</span>
+<span class="sd">         and returning min between the minimum of the regularly queried values, and the median of the values</span>
+<span class="sd">         after accounting for the error estimates.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="n">hashes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hash</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">hashes</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="o">.</span><span class="n">depth</span><span class="p">)]</span>
+        <span class="n">error_estimates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">updater</span><span class="o">.</span><span class="n">count_mean_error_estimates</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">min</span><span class="p">(</span><span class="n">median</span><span class="p">(</span><span class="nb">sorted</span><span class="p">([</span><span class="n">value</span> <span class="o">-</span> <span class="n">error</span> <span class="k">for</span> <span class="n">value</span><span class="p">,</span> <span class="n">error</span> <span class="ow">in</span> <span class="n">izip</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">error_estimates</span><span class="p">)])),</span>
+                   <span class="nb">min</span><span class="p">(</span><span class="n">values</span><span class="p">))</span>
+
+<div class="viewcode-block" id="HashPairCountMeanMinSketch.most_common"><a class="viewcode-back" href="../../sketches.html#minsketch.count_mean_sketch.HashPairCountMeanMinSketch.most_common">[docs]</a>    <span class="k">def</span> <span class="nf">most_common</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="k">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Re-query the top-n keys using the count-mean query algorithm,</span>
+<span class="sd">        and then return the top k of the re-queried results</span>
+<span class="sd">        :param k: The number of top items to return, at most n, as this function was initialized</span>
+<span class="sd">        :return: The top k items observed by this CM sketch, and how often they were seen</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">mean_values</span> <span class="o">=</span> <span class="p">[(</span><span class="n">key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">))</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">top_n</span><span class="p">]</span>
+        <span class="n">mean_values</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">pair</span><span class="p">:</span> <span class="n">pair</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">reverse</span><span class="o">=</span><span class="k">True</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">k</span> <span class="ow">is</span> <span class="k">None</span> <span class="ow">or</span> <span class="n">k</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">:</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span>
+
+        <span class="k">return</span> <span class="n">mean_values</span><span class="p">[:</span><span class="n">k</span><span class="p">]</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, Guy Davidson.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

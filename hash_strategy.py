@@ -9,10 +9,13 @@ ARBITRARY_LARGE_PRIME_NUMBER = 4294967291  # Largest 32 bit prime
 
 
 class UniversalHashFunctionGenerator(object):
-    """Implementation of a universal hash function family generator, as described in
+    r"""Implementation of a universal hash function family generator, as described in
     Cormen et al.'s Introduction to Algorithms.
 
-    The sets are used to guarantee independence between the hash functions in this family
+    The sets are used to guarantee independence between the hash functions in this family.
+
+    For a given prime number p, and a width of table m, functions are constructed as \
+    :math:`f(x)=((ax + b)\mod p)\mod m, \ a \in \{1, 2, ..., p - 1\}, \ b \in \{0, 1, ..., p - 1\}`
     """
     def __init__(self, m):
         self.a_set = {None, }
@@ -51,10 +54,10 @@ class NaiveHashingStrategy(object):
 
 
 class DoubleHashingStrategy(object):
-    """A single hash-pair count-min hashing scheme, based on Kirsch & Mitzenmacher (2008):
+    r"""A single hash-pair count-min hashing scheme, based on Kirsch & Mitzenmacher (2008):
     https://www.eecs.harvard.edu/~michaelm/postscripts/rsa2008.pdf
 
-    Each item (x) is hashed as: $ h_1(x) + j * h_2(x) \forall j \in \{0, 1, ..., d - 1\} $
+    Each item (x) is hashed as: :math:`h_1(x) + j * h_2(x) \ \forall \ j \in \{0, 1, ..., d - 1\}`
     """
     def __init__(self, depth, width, hash_gen=None):
         self.depth = depth

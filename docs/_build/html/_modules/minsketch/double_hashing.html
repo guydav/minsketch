@@ -1,0 +1,179 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>minsketch.double_hashing &#8212; minsketch 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for minsketch.double_hashing</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;Two implementations of ideas from &quot;Less Hashing, Same Performance: Building a Better Bloom Filter,&quot;</span>
+<span class="sd">by Kirsch and Mitzenmacher (2008): https://www.eecs.harvard.edu/~michaelm/postscripts/rsa2008.pdf</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">count_min_sketch</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">sketch_tables</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">hash_strategy</span> <span class="k">import</span> <span class="n">DoubleHashingStrategy</span>
+
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">from</span> <span class="nn">gmpy2</span> <span class="k">import</span> <span class="n">next_prime</span>
+
+
+<div class="viewcode-block" id="HashPairCMSketch"><a class="viewcode-back" href="../../sketches.html#minsketch.double_hashing.HashPairCMSketch">[docs]</a><span class="k">class</span> <span class="nc">HashPairCMSketch</span><span class="p">(</span><span class="n">TopNCountMinSketch</span><span class="p">):</span>
+    <span class="sd">r&quot;&quot;&quot;A single hash-pair count-min sketch, based on Kirsch &amp; Mitzenmacher (2008). This essentially ignores \</span>
+<span class="sd">    the epsilon parameter, and provides a robust implementation of a count-min sketch using only two hash functions.</span>
+
+<span class="sd">    From the paper:</span>
+<span class="sd">    &quot;In particular, for \</span>
+<span class="sd">    :math:`w \geq \frac{2e}{\epsilon} \ and \ \delta \geq \ln \frac{1}{\epsilon(1 − \frac{1}{2e^2})}`&quot;</span>
+
+<span class="sd">    =&gt; My assumption is that they mean d, rather than delta, and therefore I report the effective delta.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">delta</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">,</span> <span class="n">hash_gen</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">DEFAULT_N</span><span class="p">,</span>
+                 <span class="n">table_class</span><span class="o">=</span><span class="n">ListBackedSketchTable</span><span class="p">,</span>
+                 <span class="n">update_strategy</span><span class="o">=</span><span class="n">NaiveUpdateStrategy</span><span class="p">,</span>
+                 <span class="n">lossy_strategy</span><span class="o">=</span><span class="n">NoLossyUpdateStrategy</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Most parameters conform to TopNCountMinSketch, except for the delta and hash_gen:</span>
+<span class="sd">        :param delta: How often (on expectation) we accept an error. Ignored here, but received to conform to the \</span>
+<span class="sd">            same initialization signature of the rest of the count-min sketches. This feels slightly questionable.</span>
+<span class="sd">        :param epsilon: What margin (on expectation) we accept for an error</span>
+<span class="sd">        :param hash_gen: We allow receiving a hash generator to be able to share them between different instances, \</span>
+<span class="sd">            if we want to guarantee their independence.</span>
+<span class="sd">        :param n: The top-N items to track.</span>
+<span class="sd">        :param table_class: The class of table to use in backing this CM-sketch.</span>
+<span class="sd">        :param update_strategy: The updating strategy to use (currently naive or convservative)</span>
+<span class="sd">        :param lossy_strategy: The lossy window strategy to use (naive, no threshold, threshold of 1, \</span>
+<span class="sd">            threshold of window count, threshold of the square root of the window count)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">width</span> <span class="o">=</span> <span class="n">next_prime</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">e</span> <span class="o">/</span> <span class="n">epsilon</span><span class="p">)))</span>
+        <span class="n">depth</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">epsilon</span> <span class="o">-</span> <span class="n">epsilon</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">e</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)))))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s">&#39;The effective delta is {delta}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">delta</span><span class="o">=</span><span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">depth</span><span class="p">)))</span>
+
+        <span class="k">if</span> <span class="n">hash_gen</span> <span class="ow">is</span> <span class="k">None</span><span class="p">:</span>
+            <span class="n">hash_gen</span> <span class="o">=</span> <span class="n">UniversalHashFunctionGenerator</span><span class="p">(</span><span class="n">ARBITRARY_LARGE_PRIME_NUMBER</span><span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">HashPairCMSketch</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">delta</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">,</span> <span class="n">depth</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span>
+                                               <span class="n">table_class</span><span class="p">,</span>
+                                               <span class="n">DoubleHashingStrategy</span><span class="p">(</span><span class="n">depth</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">hash_gen</span><span class="p">),</span>
+                                               <span class="n">update_strategy</span><span class="p">,</span>
+                                               <span class="n">lossy_strategy</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MultiHashPairTopNCMSketch"><a class="viewcode-back" href="../../sketches.html#minsketch.double_hashing.MultiHashPairTopNCMSketch">[docs]</a><span class="k">class</span> <span class="nc">MultiHashPairTopNCMSketch</span><span class="p">(</span><span class="n">TopNCountMinSketch</span><span class="p">):</span>
+    <span class="sd">r&quot;&quot;&quot;From the previously referenced paper: \</span>
+<span class="sd">    &quot;Given such a result, it is straightforward to obtain a variation that uses \</span>
+<span class="sd">    :math:`2\frac{\ln \frac{1}{\delta}}{\ln \frac{1}{\epsilon}}` pairwise independent hash functions and achieves \</span>
+<span class="sd">    the desired failure probability $\delta$: simply build \</span>
+<span class="sd">    :math:`2\frac{\ln \frac{1}{\delta}}{\ln \frac{1}{\epsilon}}` \</span>
+<span class="sd">    independent copies of this data structure, and always answer a point query with the minimum estimate\</span>
+<span class="sd">    given by one of those copies.</span>
+
+<span class="sd">    I believe the second 2 is a mistake - so I only build \</span>
+<span class="sd">    :math:`\frac{\ln \frac{1}{\delta}}{\ln \frac{1}{\epsilon}}` rounded up sketches.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">delta</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">DEFAULT_N</span><span class="p">,</span>
+                 <span class="n">table_class</span><span class="o">=</span><span class="n">ListBackedSketchTable</span><span class="p">,</span>
+                 <span class="n">update_strategy</span><span class="o">=</span><span class="n">NaiveUpdateStrategy</span><span class="p">,</span>
+                 <span class="n">lossy_strategy</span><span class="o">=</span><span class="n">NoLossyUpdateStrategy</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_top_n</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">count</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">delta</span><span class="p">)</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">epsilon</span><span class="p">)))</span>
+
+        <span class="n">hash_gen</span> <span class="o">=</span> <span class="n">UniversalHashFunctionGenerator</span><span class="p">(</span><span class="n">ARBITRARY_LARGE_PRIME_NUMBER</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">sketches</span> <span class="o">=</span> <span class="p">[</span><span class="n">HashPairCMSketch</span><span class="p">(</span><span class="n">delta</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">,</span> <span class="n">hash_gen</span><span class="p">,</span>
+                                          <span class="n">table_class</span><span class="o">=</span><span class="n">table_class</span><span class="p">,</span>
+                                          <span class="n">update_strategy</span><span class="o">=</span><span class="n">update_strategy</span><span class="p">,</span>
+                                          <span class="n">lossy_strategy</span><span class="o">=</span><span class="n">lossy_strategy</span><span class="p">)</span>
+                         <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">count</span><span class="p">)]</span>
+
+    <span class="k">def</span> <span class="nf">insert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">new_min_count</span> <span class="o">=</span> <span class="nb">min</span><span class="p">([</span><span class="n">sketch</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">count</span><span class="p">)</span> <span class="k">for</span> <span class="n">sketch</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sketches</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_top_n</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">new_min_count</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_min_count</span>
+
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">min</span><span class="p">([</span><span class="n">sketch</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">sketch</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sketches</span><span class="p">])</span></div>
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, Guy Davidson.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

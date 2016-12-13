@@ -11,11 +11,13 @@ from gmpy2 import next_prime
 
 
 class HashPairCMSketch(TopNCountMinSketch):
-    """A single hash-pair count-min sketch, based on Kirsch & Mitzenmacher (2008). This essentially ignores \
+    r"""A single hash-pair count-min sketch, based on Kirsch & Mitzenmacher (2008). This essentially ignores \
     the epsilon parameter, and provides a robust implementation of a count-min sketch using only two hash functions.
 
-    From the paper: \
-    In particular, for $ w \geq \frac{2e}{\epsilon} and \delta \geq \ln \frac{1}{\epsilon(1 − \frac{1}{2e^2})}$ \
+    From the paper:
+    "In particular, for \
+    :math:`w \geq \frac{2e}{\epsilon} \ and \ \delta \geq \ln \frac{1}{\epsilon(1 − \frac{1}{2e^2})}`"
+
     => My assumption is that they mean d, rather than delta, and therefore I report the effective delta.
     """
 
@@ -51,15 +53,16 @@ class HashPairCMSketch(TopNCountMinSketch):
 
 
 class MultiHashPairTopNCMSketch(TopNCountMinSketch):
-    """From the previously referenced paper: \
+    r"""From the previously referenced paper: \
     "Given such a result, it is straightforward to obtain a variation that uses \
-    $2\frac{\ln \fraC{1}{\delta}}{\ln \frac{1}{\epsilon}}$ pairwise independent hash functions and achieves \
-    the desired failure probability $\delta$: simply build $2\frac{\ln \fraC{1}{\delta}}{\ln \frac{1}{\epsilon}}$ \
+    :math:`2\frac{\ln \frac{1}{\delta}}{\ln \frac{1}{\epsilon}}` pairwise independent hash functions and achieves \
+    the desired failure probability $\delta$: simply build \
+    :math:`2\frac{\ln \frac{1}{\delta}}{\ln \frac{1}{\epsilon}}` \
     independent copies of this data structure, and always answer a point query with the minimum estimate\
     given by one of those copies.
 
-    I believe the second 2 is a mistake - so I only build $\frac{\ln \fraC{1}{\delta}}{\ln \frac{1}{\epsilon}}$ \
-    rounded up sketches.
+    I believe the second 2 is a mistake - so I only build \
+    :math:`\frac{\ln \frac{1}{\delta}}{\ln \frac{1}{\epsilon}}` rounded up sketches.
 
     """
     def __init__(self, delta, epsilon, n=DEFAULT_N,

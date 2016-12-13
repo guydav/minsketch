@@ -1,0 +1,287 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>minsketch.count_min_sketch &#8212; minsketch 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for minsketch.count_min_sketch</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;This module implements the basic count-min sketch class, from which most others inherit.</span>
+<span class="sd">It also offers an implementation of a count-min sketch that keeps track of some number of</span>
+<span class="sd">most commonly recurring items.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">sketch_tables</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">heap</span> <span class="k">import</span> <span class="n">MinHeap</span>
+<span class="kn">from</span> <span class="nn">hash_strategy</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">update_strategy</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">lossy_strategy</span> <span class="k">import</span> <span class="o">*</span>
+
+<span class="kn">import</span> <span class="nn">math</span>
+
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="k">import</span> <span class="n">izip</span>
+
+
+<span class="n">DEFAULT_N</span> <span class="o">=</span> <span class="mi">10</span>
+
+
+<div class="viewcode-block" id="CountMinSketch"><a class="viewcode-back" href="../../sketches.html#minsketch.count_min_sketch.CountMinSketch">[docs]</a><span class="k">class</span> <span class="nc">CountMinSketch</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A minimalist implementation of count-min sketches</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">delta</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">,</span> <span class="n">depth</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="k">None</span><span class="p">,</span>
+                 <span class="n">table_class</span><span class="o">=</span><span class="n">ListBackedSketchTable</span><span class="p">,</span>
+                 <span class="n">hash_strategy</span><span class="o">=</span><span class="n">NaiveHashingStrategy</span><span class="p">,</span>
+                 <span class="n">update_strategy</span><span class="o">=</span><span class="n">NaiveUpdateStrategy</span><span class="p">,</span>
+                 <span class="n">lossy_strategy</span><span class="o">=</span><span class="n">NoLossyUpdateStrategy</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Delta and epsilon define our error threshold. They allow specifying how often an</span>
+<span class="sd">        error is acceptable within a certain range of the true count.</span>
+
+<span class="sd">        It then allocates a table of the given type with the calculated or provided width and depth,</span>
+<span class="sd">        and uses the optional strategy choices to implement regular or double hashing, naive or</span>
+<span class="sd">        conservative update, and naive or lossy counting.</span>
+<span class="sd">        :param delta: How often (on expectation) we accept an error</span>
+<span class="sd">        :param epsilon: What margin (on expectation) we accept for an error</span>
+<span class="sd">        :param depth: Provide a value to override the default depth calculation</span>
+<span class="sd">        :param width: Provide a value to override the default width calculation.</span>
+<span class="sd">        :param table_class: The class of table to use in backing this CM-sketch.</span>
+<span class="sd">        :param hash_strategy: The hashing strategy to use (currently regular or double)</span>
+<span class="sd">        :param update_strategy: The updating strategy to use (currently naive or convservative)</span>
+<span class="sd">        :param lossy_strategy: The lossy window strategy to use (naive, no threshold, threshold of 1,</span>
+<span class="sd">                                threshold of window count, threshold of the square root of the window count)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">depth</span> <span class="ow">is</span> <span class="k">None</span><span class="p">:</span>
+            <span class="n">depth</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">delta</span><span class="p">)))</span>
+
+        <span class="k">if</span> <span class="n">width</span> <span class="ow">is</span> <span class="k">None</span><span class="p">:</span>
+            <span class="n">width</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">e</span> <span class="o">/</span> <span class="n">epsilon</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">table</span> <span class="o">=</span> <span class="n">table_class</span><span class="p">(</span><span class="n">depth</span><span class="p">,</span> <span class="n">width</span><span class="p">)</span>
+
+        <span class="c"># iffy work-around to support receiving both a class and a pre-initialized strategy</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hash_strategy</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hash</span> <span class="o">=</span> <span class="n">hash_strategy</span><span class="p">(</span><span class="n">depth</span><span class="p">,</span> <span class="n">width</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hash</span> <span class="o">=</span> <span class="n">hash_strategy</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">update_strategy</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">updater</span> <span class="o">=</span> <span class="n">update_strategy</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">updater</span> <span class="o">=</span> <span class="n">update_strategy</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lossy_strategy</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lossy</span> <span class="o">=</span> <span class="n">lossy_strategy</span><span class="p">()</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lossy</span> <span class="o">=</span> <span class="n">lossy_strategy</span>
+
+<div class="viewcode-block" id="CountMinSketch.insert"><a class="viewcode-back" href="../../sketches.html#minsketch.count_min_sketch.CountMinSketch.insert">[docs]</a>    <span class="k">def</span> <span class="nf">insert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Insert an item with a given count into the CM-sketch,</span>
+<span class="sd">        using the provided hashing, lossy counting, and updating strategies</span>
+
+<span class="sd">        :param item: The item to insert. Must be a number or sensibly hashable (say, a string)</span>
+<span class="sd">        :param count: The count to insert with, defaults to 1</span>
+<span class="sd">        :return: The new minimal value of this item in the CM-sketch.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">hashes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hash</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lossy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">updater</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="p">,</span> <span class="n">hashes</span><span class="p">,</span> <span class="n">count</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CountMinSketch.update"><a class="viewcode-back" href="../../sketches.html#minsketch.count_min_sketch.CountMinSketch.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">items</span><span class="p">,</span> <span class="n">counts</span><span class="o">=</span><span class="k">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Implement a group update of items and counts</span>
+
+<span class="sd">        :param items: The items to update in</span>
+<span class="sd">        :param counts: The count of each item. If exists, assumed to be the same size as items.</span>
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">counts</span> <span class="ow">is</span> <span class="k">None</span><span class="p">:</span>
+            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">]</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">count</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span><span class="p">,</span> <span class="n">count</span> <span class="ow">in</span> <span class="n">izip</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="n">counts</span><span class="p">)]</span></div>
+
+<div class="viewcode-block" id="CountMinSketch.get"><a class="viewcode-back" href="../../sketches.html#minsketch.count_min_sketch.CountMinSketch.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieve the current minimum value associated with an item</span>
+
+<span class="sd">        :param item: The item to retrieve</span>
+<span class="sd">        :return: The best current estimate for how often it appeared so far</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">hashes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hash</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">min</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">hashes</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="o">.</span><span class="n">depth</span><span class="p">)])</span></div>
+
+<div class="viewcode-block" id="CountMinSketch.inner_product_query"><a class="viewcode-back" href="../../sketches.html#minsketch.count_min_sketch.CountMinSketch.inner_product_query">[docs]</a>    <span class="k">def</span> <span class="nf">inner_product_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">first_item</span><span class="p">,</span> <span class="n">second_item</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Not expanded upon, but a simple implementation of the idea of an inner-product</span>
+<span class="sd">        query using a CM-sketch, as dicussed in the original paper</span>
+
+<span class="sd">        :param first_item: The first item queried</span>
+<span class="sd">        :param second_item: The second item queried</span>
+<span class="sd">        :return: The best estimate for their inner-product within the CM-sketch</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">first_hashes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hash</span><span class="p">(</span><span class="n">first_item</span><span class="p">)</span>
+        <span class="n">second_hashes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hash</span><span class="p">(</span><span class="n">second_item</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">min</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">first_hashes</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">second_hashes</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="o">.</span><span class="n">depth</span><span class="p">)])</span></div></div>
+
+
+<div class="viewcode-block" id="TopNCountMinSketch"><a class="viewcode-back" href="../../sketches.html#minsketch.count_min_sketch.TopNCountMinSketch">[docs]</a><span class="k">class</span> <span class="nc">TopNCountMinSketch</span><span class="p">(</span><span class="n">CountMinSketch</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Implementation of a CountMinSketch supporting tracking the top-N items.</span>
+
+<span class="sd">    Inspired in part by the following blog post:</span>
+<span class="sd">    https://tech.shareaholic.com/2012/12/03/the-count-min-sketch-how-to-count-over-large-keyspaces-when-about-right-is-good-enough/</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">delta</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">,</span> <span class="n">depth</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">DEFAULT_N</span><span class="p">,</span>
+                 <span class="n">table_class</span><span class="o">=</span><span class="n">ListBackedSketchTable</span><span class="p">,</span>
+                 <span class="n">hash_strategy</span><span class="o">=</span><span class="n">NaiveHashingStrategy</span><span class="p">,</span>
+                 <span class="n">update_strategy</span><span class="o">=</span><span class="n">NaiveUpdateStrategy</span><span class="p">,</span>
+                 <span class="n">lossy_strategy</span><span class="o">=</span><span class="n">NoLossyUpdateStrategy</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">TopNCountMinSketch</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">delta</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">,</span> <span class="n">depth</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span>
+                                                 <span class="n">table_class</span><span class="o">=</span><span class="n">table_class</span><span class="p">,</span>
+                                                 <span class="n">hash_strategy</span><span class="o">=</span><span class="n">hash_strategy</span><span class="p">,</span>
+                                                 <span class="n">update_strategy</span><span class="o">=</span><span class="n">update_strategy</span><span class="p">,</span>
+                                                 <span class="n">lossy_strategy</span><span class="o">=</span><span class="n">lossy_strategy</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_top_n</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_init_top_n</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize the framework required to track the top-N items.</span>
+<span class="sd">        Extracted to a separate method to ease subclassing.</span>
+<span class="sd">        :param n: The number of top items to track</span>
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="n">n</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">heap</span> <span class="o">=</span> <span class="n">MinHeap</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">heap_full</span> <span class="o">=</span> <span class="k">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">top_n</span> <span class="o">=</span> <span class="p">{}</span>
+
+<div class="viewcode-block" id="TopNCountMinSketch.insert"><a class="viewcode-back" href="../../sketches.html#minsketch.count_min_sketch.TopNCountMinSketch.insert">[docs]</a>    <span class="k">def</span> <span class="nf">insert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Insert the item, and update the top-N registry.</span>
+
+<span class="sd">        :param item: The item to insert. Must be a number or sensibly hashable (say, a string)</span>
+<span class="sd">        :param count: The count to insert with, defaults to 1</span>
+<span class="sd">        :return: The new minimal count for this item</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">new_min_count</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">TopNCountMinSketch</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">count</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_top_n</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">new_min_count</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_min_count</span></div>
+
+    <span class="k">def</span> <span class="nf">_update_top_n</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">new_min_count</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Update the top-N registry for a given item.</span>
+<span class="sd">        The post-condition maintains that the N most recurring items so far will be in the top_n dictionary and</span>
+<span class="sd">        heap, and that no more than N items will be in either.</span>
+
+<span class="sd">        :param item: The item just inserted.</span>
+<span class="sd">        :param new_min_count: Its new minimal count</span>
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">heap_full</span> <span class="ow">or</span> <span class="n">new_min_count</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">heap</span><span class="o">.</span><span class="n">peek</span><span class="p">()[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">top_n</span><span class="p">:</span>
+                <span class="n">existing_pair</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">top_n</span><span class="p">[</span><span class="n">item</span><span class="p">]</span>
+                <span class="n">existing_pair</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_min_count</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">heap</span><span class="o">.</span><span class="n">heapify</span><span class="p">()</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">pair</span> <span class="o">=</span> <span class="p">[</span><span class="n">new_min_count</span><span class="p">,</span> <span class="n">item</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">top_n</span><span class="p">[</span><span class="n">item</span><span class="p">]</span> <span class="o">=</span> <span class="n">pair</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">heap_full</span><span class="p">:</span>
+                    <span class="n">old_pair</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">heap</span><span class="o">.</span><span class="n">push_pop</span><span class="p">(</span><span class="n">pair</span><span class="p">)</span>
+                    <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">top_n</span><span class="p">[</span><span class="n">old_pair</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">heap</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="n">pair</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">heap</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">heap_full</span> <span class="o">=</span> <span class="k">True</span>
+
+<div class="viewcode-block" id="TopNCountMinSketch.most_common"><a class="viewcode-back" href="../../sketches.html#minsketch.count_min_sketch.TopNCountMinSketch.most_common">[docs]</a>    <span class="k">def</span> <span class="nf">most_common</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="k">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the most common k items, for k &lt;= n.</span>
+<span class="sd">        Accepting a parameter to conform to python&#39;s Counter interface, and returning the results in their style</span>
+<span class="sd">        :param k: The number of top items to return, at most n, as this function was initialized</span>
+<span class="sd">        :return: The top k items observed by this CM sketch, and how often they were seen</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">k</span> <span class="ow">is</span> <span class="k">None</span> <span class="ow">or</span> <span class="n">k</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">:</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span>
+
+        <span class="k">return</span> <span class="p">[</span><span class="n">item</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">top_n</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="n">reverse</span><span class="o">=</span><span class="k">True</span><span class="p">)[:</span><span class="n">k</span><span class="p">]]</span></div>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">most_common</span><span class="p">())</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, Guy Davidson.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

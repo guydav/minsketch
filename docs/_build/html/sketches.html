@@ -1,0 +1,356 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Sketches Code Reference &#8212; minsketch 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Strategies Code Reference" href="strategies.html" />
+    <link rel="prev" title="minsketch" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="sketches-code-reference">
+<h1>Sketches Code Reference<a class="headerlink" href="#sketches-code-reference" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="plain-old-count-min-sketch">
+<h2>Plain-Old Count-Min Sketch<a class="headerlink" href="#plain-old-count-min-sketch" title="Permalink to this headline">¶</a></h2>
+<p>count_min_sketch.py</p>
+<span class="target" id="module-minsketch.count_min_sketch"></span><p>This module implements the basic count-min sketch class, from which most others inherit.
+It also offers an implementation of a count-min sketch that keeps track of some number of
+most commonly recurring items.</p>
+<dl class="class">
+<dt id="minsketch.count_min_sketch.CountMinSketch">
+<em class="property">class </em><code class="descclassname">minsketch.count_min_sketch.</code><code class="descname">CountMinSketch</code><span class="sig-paren">(</span><em>delta</em>, <em>epsilon</em>, <em>depth=None</em>, <em>width=None</em>, <em>table_class=&lt;class 'minsketch.sketch_tables.ListBackedSketchTable'&gt;</em>, <em>hash_strategy=&lt;class 'minsketch.hash_strategy.NaiveHashingStrategy'&gt;</em>, <em>update_strategy=&lt;class 'minsketch.update_strategy.NaiveUpdateStrategy'&gt;</em>, <em>lossy_strategy=&lt;class 'minsketch.lossy_strategy.NoLossyUpdateStrategy'&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/minsketch/count_min_sketch.html#CountMinSketch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#minsketch.count_min_sketch.CountMinSketch" title="Permalink to this definition">¶</a></dt>
+<dd><p>A minimalist implementation of count-min sketches</p>
+<dl class="method">
+<dt id="minsketch.count_min_sketch.CountMinSketch.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>item</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/minsketch/count_min_sketch.html#CountMinSketch.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#minsketch.count_min_sketch.CountMinSketch.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve the current minimum value associated with an item</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>item</strong> &#8211; The item to retrieve</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The best current estimate for how often it appeared so far</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="minsketch.count_min_sketch.CountMinSketch.inner_product_query">
+<code class="descname">inner_product_query</code><span class="sig-paren">(</span><em>first_item</em>, <em>second_item</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/minsketch/count_min_sketch.html#CountMinSketch.inner_product_query"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#minsketch.count_min_sketch.CountMinSketch.inner_product_query" title="Permalink to this definition">¶</a></dt>
+<dd><p>Not expanded upon, but a simple implementation of the idea of an inner-product
+query using a CM-sketch, as dicussed in the original paper</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>first_item</strong> &#8211; The first item queried</li>
+<li><strong>second_item</strong> &#8211; The second item queried</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">The best estimate for their inner-product within the CM-sketch</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="minsketch.count_min_sketch.CountMinSketch.insert">
+<code class="descname">insert</code><span class="sig-paren">(</span><em>item</em>, <em>count=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/minsketch/count_min_sketch.html#CountMinSketch.insert"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#minsketch.count_min_sketch.CountMinSketch.insert" title="Permalink to this definition">¶</a></dt>
+<dd><p>Insert an item with a given count into the CM-sketch,
+using the provided hashing, lossy counting, and updating strategies</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>item</strong> &#8211; The item to insert. Must be a number or sensibly hashable (say, a string)</li>
+<li><strong>count</strong> &#8211; The count to insert with, defaults to 1</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">The new minimal value of this item in the CM-sketch.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="minsketch.count_min_sketch.CountMinSketch.update">
+<code class="descname">update</code><span class="sig-paren">(</span><em>items</em>, <em>counts=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/minsketch/count_min_sketch.html#CountMinSketch.update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#minsketch.count_min_sketch.CountMinSketch.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implement a group update of items and counts</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>items</strong> &#8211; The items to update in</li>
+<li><strong>counts</strong> &#8211; The count of each item. If exists, assumed to be the same size as items.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">None</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="minsketch.count_min_sketch.TopNCountMinSketch">
+<em class="property">class </em><code class="descclassname">minsketch.count_min_sketch.</code><code class="descname">TopNCountMinSketch</code><span class="sig-paren">(</span><em>delta</em>, <em>epsilon</em>, <em>depth=None</em>, <em>width=None</em>, <em>n=10</em>, <em>table_class=&lt;class 'minsketch.sketch_tables.ListBackedSketchTable'&gt;</em>, <em>hash_strategy=&lt;class 'minsketch.hash_strategy.NaiveHashingStrategy'&gt;</em>, <em>update_strategy=&lt;class 'minsketch.update_strategy.NaiveUpdateStrategy'&gt;</em>, <em>lossy_strategy=&lt;class 'minsketch.lossy_strategy.NoLossyUpdateStrategy'&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/minsketch/count_min_sketch.html#TopNCountMinSketch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#minsketch.count_min_sketch.TopNCountMinSketch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implementation of a CountMinSketch supporting tracking the top-N items.</p>
+<p>Inspired in part by the following blog post:
+<a class="reference external" href="https://tech.shareaholic.com/2012/12/03/the-count-min-sketch-how-to-count-over-large-keyspaces-when-about-right-is-good-enough/">https://tech.shareaholic.com/2012/12/03/the-count-min-sketch-how-to-count-over-large-keyspaces-when-about-right-is-good-enough/</a></p>
+<dl class="method">
+<dt id="minsketch.count_min_sketch.TopNCountMinSketch.insert">
+<code class="descname">insert</code><span class="sig-paren">(</span><em>item</em>, <em>count=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/minsketch/count_min_sketch.html#TopNCountMinSketch.insert"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#minsketch.count_min_sketch.TopNCountMinSketch.insert" title="Permalink to this definition">¶</a></dt>
+<dd><p>Insert the item, and update the top-N registry.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>item</strong> &#8211; The item to insert. Must be a number or sensibly hashable (say, a string)</li>
+<li><strong>count</strong> &#8211; The count to insert with, defaults to 1</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">The new minimal count for this item</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="minsketch.count_min_sketch.TopNCountMinSketch.most_common">
+<code class="descname">most_common</code><span class="sig-paren">(</span><em>k=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/minsketch/count_min_sketch.html#TopNCountMinSketch.most_common"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#minsketch.count_min_sketch.TopNCountMinSketch.most_common" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the most common k items, for k &lt;= n.
+Accepting a parameter to conform to python&#8217;s Counter interface, and returning the results in their style
+:param k: The number of top items to return, at most n, as this function was initialized
+:return: The top k items observed by this CM sketch, and how often they were seen</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="double-hashing-count-min-sketch">
+<h2>Double-Hashing Count-Min Sketch<a class="headerlink" href="#double-hashing-count-min-sketch" title="Permalink to this headline">¶</a></h2>
+<p>double_hashing.py</p>
+<span class="target" id="module-minsketch.double_hashing"></span><p>Two implementations of ideas from &#8220;Less Hashing, Same Performance: Building a Better Bloom Filter,&#8221;
+by Kirsch and Mitzenmacher (2008): <a class="reference external" href="https://www.eecs.harvard.edu/~michaelm/postscripts/rsa2008.pdf">https://www.eecs.harvard.edu/~michaelm/postscripts/rsa2008.pdf</a></p>
+<dl class="class">
+<dt id="minsketch.double_hashing.HashPairCMSketch">
+<em class="property">class </em><code class="descclassname">minsketch.double_hashing.</code><code class="descname">HashPairCMSketch</code><span class="sig-paren">(</span><em>delta</em>, <em>epsilon</em>, <em>hash_gen=None</em>, <em>n=10</em>, <em>table_class=&lt;class 'minsketch.sketch_tables.ListBackedSketchTable'&gt;</em>, <em>update_strategy=&lt;class 'minsketch.update_strategy.NaiveUpdateStrategy'&gt;</em>, <em>lossy_strategy=&lt;class 'minsketch.lossy_strategy.NoLossyUpdateStrategy'&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/minsketch/double_hashing.html#HashPairCMSketch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#minsketch.double_hashing.HashPairCMSketch" title="Permalink to this definition">¶</a></dt>
+<dd><p>A single hash-pair count-min sketch, based on Kirsch &amp; Mitzenmacher (2008). This essentially ignores the epsilon parameter, and provides a robust implementation of a count-min sketch using only two hash functions.</p>
+<p>From the paper:
+&#8220;In particular, for <span class="math">\(w \geq \frac{2e}{\epsilon} \ and \ \delta \geq \ln \frac{1}{\epsilon(1 − \frac{1}{2e^2})}\)</span>&#8220;</p>
+<p>=&gt; My assumption is that they mean d, rather than delta, and therefore I report the effective delta.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="minsketch.double_hashing.MultiHashPairTopNCMSketch">
+<em class="property">class </em><code class="descclassname">minsketch.double_hashing.</code><code class="descname">MultiHashPairTopNCMSketch</code><span class="sig-paren">(</span><em>delta</em>, <em>epsilon</em>, <em>n=10</em>, <em>table_class=&lt;class 'minsketch.sketch_tables.ListBackedSketchTable'&gt;</em>, <em>update_strategy=&lt;class 'minsketch.update_strategy.NaiveUpdateStrategy'&gt;</em>, <em>lossy_strategy=&lt;class 'minsketch.lossy_strategy.NoLossyUpdateStrategy'&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/minsketch/double_hashing.html#MultiHashPairTopNCMSketch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#minsketch.double_hashing.MultiHashPairTopNCMSketch" title="Permalink to this definition">¶</a></dt>
+<dd><p>From the previously referenced paper: &#8220;Given such a result, it is straightforward to obtain a variation that uses <span class="math">\(2\frac{\ln \frac{1}{\delta}}{\ln \frac{1}{\epsilon}}\)</span> pairwise independent hash functions and achieves the desired failure probability $delta$: simply build <span class="math">\(2\frac{\ln \frac{1}{\delta}}{\ln \frac{1}{\epsilon}}\)</span> independent copies of this data structure, and always answer a point query with the minimum estimategiven by one of those copies.</p>
+<p>I believe the second 2 is a mistake - so I only build <span class="math">\(\frac{\ln \frac{1}{\delta}}{\ln \frac{1}{\epsilon}}\)</span> rounded up sketches.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="count-min-mean-sketch">
+<h2>Count-Min-Mean Sketch<a class="headerlink" href="#count-min-mean-sketch" title="Permalink to this headline">¶</a></h2>
+<p>count_mean_sketch.py</p>
+<span class="target" id="module-minsketch.count_mean_sketch"></span><p>This model implements count-mean-min sketches, as described by Goyal and Daumé (2011):
+<a class="reference external" href="http://www.aclweb.org/anthology/D12-1100">http://www.aclweb.org/anthology/D12-1100</a></p>
+<dl class="docutils">
+<dt>The design here is a little iffy - there&#8217;s a fair amount of code duplication between the</dt>
+<dd>two classes. Perhaps a mixin would fit better, or changing the abstractions.</dd>
+</dl>
+<dl class="class">
+<dt id="minsketch.count_mean_sketch.CountMeanMinSketch">
+<em class="property">class </em><code class="descclassname">minsketch.count_mean_sketch.</code><code class="descname">CountMeanMinSketch</code><span class="sig-paren">(</span><em>delta</em>, <em>epsilon</em>, <em>depth=None</em>, <em>width=None</em>, <em>n=10</em>, <em>table_class=&lt;class 'minsketch.sketch_tables.ListBackedSketchTable'&gt;</em>, <em>hash_strategy=&lt;class 'minsketch.hash_strategy.NaiveHashingStrategy'&gt;</em>, <em>update_strategy=&lt;class 'minsketch.update_strategy.NaiveUpdateStrategy'&gt;</em>, <em>lossy_strategy=&lt;class 'minsketch.lossy_strategy.NoLossyUpdateStrategy'&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/minsketch/count_mean_sketch.html#CountMeanMinSketch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#minsketch.count_mean_sketch.CountMeanMinSketch" title="Permalink to this definition">¶</a></dt>
+<dd><p>A count-mean-min sketch, based on the regular TopNCountMinSketch.</p>
+<p>The two main changes include using error-estimates from the updater (regular or conservative),
+and returning min between the minimum of the regularly queried values, and the median of the values
+after accounting for the error estimates.</p>
+<dl class="method">
+<dt id="minsketch.count_mean_sketch.CountMeanMinSketch.most_common">
+<code class="descname">most_common</code><span class="sig-paren">(</span><em>k=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/minsketch/count_mean_sketch.html#CountMeanMinSketch.most_common"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#minsketch.count_mean_sketch.CountMeanMinSketch.most_common" title="Permalink to this definition">¶</a></dt>
+<dd><p>Re-query the top-n keys using the count-mean query algorithm,
+and then return the top k of the re-queried results
+:param k: The number of top items to return, at most n, as this function was initialized
+:return: The top k items observed by this CM sketch, and how often they were seen</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="minsketch.count_mean_sketch.HashPairCountMeanMinSketch">
+<em class="property">class </em><code class="descclassname">minsketch.count_mean_sketch.</code><code class="descname">HashPairCountMeanMinSketch</code><span class="sig-paren">(</span><em>delta</em>, <em>epsilon</em>, <em>hash_gen=None</em>, <em>n=10</em>, <em>table_class=&lt;class 'minsketch.sketch_tables.ListBackedSketchTable'&gt;</em>, <em>update_strategy=&lt;class 'minsketch.update_strategy.NaiveUpdateStrategy'&gt;</em>, <em>lossy_strategy=&lt;class 'minsketch.lossy_strategy.NoLossyUpdateStrategy'&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/minsketch/count_mean_sketch.html#HashPairCountMeanMinSketch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#minsketch.count_mean_sketch.HashPairCountMeanMinSketch" title="Permalink to this definition">¶</a></dt>
+<dd><p>A count-mean-min sketch, based on the HashPair CM SKETCH.</p>
+<p>The two main changes include using error-estimates from the updater (regular or conservative),
+and returning min between the minimum of the regularly queried values, and the median of the values
+after accounting for the error estimates.</p>
+<dl class="method">
+<dt id="minsketch.count_mean_sketch.HashPairCountMeanMinSketch.most_common">
+<code class="descname">most_common</code><span class="sig-paren">(</span><em>k=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/minsketch/count_mean_sketch.html#HashPairCountMeanMinSketch.most_common"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#minsketch.count_mean_sketch.HashPairCountMeanMinSketch.most_common" title="Permalink to this definition">¶</a></dt>
+<dd><p>Re-query the top-n keys using the count-mean query algorithm,
+and then return the top k of the re-queried results
+:param k: The number of top items to return, at most n, as this function was initialized
+:return: The top k items observed by this CM sketch, and how often they were seen</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="least-squares-estimating-sketch">
+<h2>Least-Squares Estimating Sketch<a class="headerlink" href="#least-squares-estimating-sketch" title="Permalink to this headline">¶</a></h2>
+<p>least_squares_sketch.py</p>
+<span class="target" id="module-minsketch.least_squares_sketch"></span><p>A least-squares estimator for count-min sketches, as introduced by Lee, Lui, Yoon, &amp; Zhang:
+<a class="reference external" href="https://www.usenix.org/legacy/event/imc05/tech/full_papers/lee/lee.pdf">https://www.usenix.org/legacy/event/imc05/tech/full_papers/lee/lee.pdf</a></p>
+<dl class="class">
+<dt id="minsketch.least_squares_sketch.LeastSquaresTopNSketch">
+<em class="property">class </em><code class="descclassname">minsketch.least_squares_sketch.</code><code class="descname">LeastSquaresTopNSketch</code><span class="sig-paren">(</span><em>delta</em>, <em>epsilon</em>, <em>depth=None</em>, <em>width=None</em>, <em>n=10</em>, <em>table_class=&lt;class 'minsketch.sketch_tables.ListBackedSketchTable'&gt;</em>, <em>hash_strategy=&lt;class 'minsketch.hash_strategy.NaiveHashingStrategy'&gt;</em>, <em>update_strategy=&lt;class 'minsketch.update_strategy.NaiveUpdateStrategy'&gt;</em>, <em>lossy_strategy=&lt;class 'minsketch.lossy_strategy.NoLossyUpdateStrategy'&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/minsketch/least_squares_sketch.html#LeastSquaresTopNSketch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#minsketch.least_squares_sketch.LeastSquaresTopNSketch" title="Permalink to this definition">¶</a></dt>
+<dd><p>The least-squares top-N sketch only overrides the most common item finding heuristic:</p>
+<dl class="method">
+<dt id="minsketch.least_squares_sketch.LeastSquaresTopNSketch.most_common">
+<code class="descname">most_common</code><span class="sig-paren">(</span><em>k=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/minsketch/least_squares_sketch.html#LeastSquaresTopNSketch.most_common"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#minsketch.least_squares_sketch.LeastSquaresTopNSketch.most_common" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a better estimate for the top k most-common entries using the least squares estimator We always solve the solution for the entire top n, and return the first k, to allow for more accuracy if only a subset is wanted (as the rest end up being used as noise variables).</p>
+<p>Formally, we construct <span class="math">\(\vec{b}\)</span> as a concatenation of the tables rows, implemented by table.to_vector(). The size of <span class="math">\(\vec{b}\)</span> is thus (table.depth * table.width) x 1.</p>
+<p>We construct <span class="math">\(A\)</span> as having the same number or rows as <span class="math">\(\vec{b}\)</span>, and having <span class="math">\(k + 1\)</span> columns, using the following values:</p>
+<p>for <span class="math">\(i \in \{0, 1, ..., \text{table.width} - 1\}\)</span> and <span class="math">\(j \in \{0, 1, ..., \text{table.depth} - 1 \}\)</span>,</p>
+<p>we set <span class="math">\(A_{\text{table.depth} * i + j + 1, l} = 1\)</span> if either the item <span class="math">\(x_l\)</span> is hashed into <span class="math">\(T[i][j]\)</span>, or if <span class="math">\(l = \text{table.width} + 1\)</span>, and otherwise we leave it as 0.</p>
+<p>We then solve using least-squares estimation (using the pseudoinverse) <span class="math">\(A\vec{x}=\vec{b}\)</span>, sort the results in a descending fashion (discarding the noise), and report the top k entries.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>k</strong> &#8211; The number of top results to return - &lt;= to n</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The least-squares estimate for how often these top k appeared</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">prev:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">next:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Sketches Code Reference</a><ul>
+<li><a class="reference internal" href="#plain-old-count-min-sketch">Plain-Old Count-Min Sketch</a></li>
+<li><a class="reference internal" href="#double-hashing-count-min-sketch">Double-Hashing Count-Min Sketch</a></li>
+<li><a class="reference internal" href="#count-min-mean-sketch">Count-Min-Mean Sketch</a></li>
+<li><a class="reference internal" href="#least-squares-estimating-sketch">Least-Squares Estimating Sketch</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">minsketch</a></li>
+      <li>Next: <a href="strategies.html" title="next chapter">Strategies Code Reference</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/sketches.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, Guy Davidson.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+      |
+      <a href="_sources/sketches.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
