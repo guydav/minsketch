@@ -103,7 +103,7 @@ def benchmark(words, sketches):
     results = OrderedDict()
 
     results['Insertion time'] = run_single_benchmark(
-        sketches, lambda sketch: timeit(partial(sketch.update, words), number=1))
+        sketches, lambda s: timeit(partial(s.update, words), number=1))
 
     results['Memory footprint'] = run_single_benchmark(sketches, asizeof)
 
