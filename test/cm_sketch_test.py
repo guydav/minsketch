@@ -10,6 +10,7 @@ import double_hashing
 import least_squares_sketch
 import count_mean_sketch
 import count_min_sketch
+import hash_strategy
 import update_strategy
 import lossy_strategy
 import sketch_tables
@@ -26,13 +27,14 @@ from numpy import mean
 import random
 
 COUNTER_KEY = 'counter'
-ARBITRARY_LARGE_PRIME_NUMBER = 48112959837082048697
 
 
 def basic_count_min_test():
     count = 100000
-    numbers = [random.randint(1, ARBITRARY_LARGE_PRIME_NUMBER - 1)
-               for _ in range(count)]
+    numbers = [
+        random.randint(1, hash_strategy.ARBITRARY_LARGE_PRIME_NUMBER - 1)
+        for _ in range(count)
+    ]
     counts = [random.randint(10, 1000) for _ in range(count)]
 
     cms = count_min_sketch.TopNCountMinSketch(10e-7, 0.005)
