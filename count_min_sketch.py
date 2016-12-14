@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
-"""This module implements the basic count-min sketch class, from which most others inherit.
-It also offers an implementation of a count-min sketch that keeps track of some number of
-most commonly recurring items.
+"""This module implements the basic count-min sketch class, from which most
+others inherit. It also offers an implementation of a count-min sketch that
+keeps track of some number of most commonly recurring items.
 """
-from sketch_tables import *
-from heap import MinHeap
-from hash_strategy import *
-from update_strategy import *
-from lossy_strategy import *
+
+import sketch_tables
+import heap
+import hash_strategy
+import update_strategy
+import lossy_strategy
 
 import math
 from itertools import izip
-
 
 DEFAULT_N = 10
 
@@ -19,26 +19,36 @@ DEFAULT_N = 10
 class CountMinSketch(object):
     """A minimalist implementation of count-min sketches
     """
-    def __init__(self, delta, epsilon, depth=None, width=None,
-                 table_class=ListBackedSketchTable,
-                 hash_strategy=NaiveHashingStrategy,
-                 update_strategy=NaiveUpdateStrategy,
-                 lossy_strategy=NoLossyUpdateStrategy):
-        """Delta and epsilon define our error threshold. They allow specifying how often an
-        error is acceptable within a certain range of the true count.
 
-        It then allocates a table of the given type with the calculated or provided width and depth,
-        and uses the optional strategy choices to implement regular or double hashing, naive or
-        conservative update, and naive or lossy counting.
+    def __init__(self,
+                 delta,
+                 epsilon,
+                 depth=None,
+                 width=None,
+                 table_class=sketch_tables.ListBackedSketchTable,
+                 hash_strategy=hash_strategy.NaiveHashingStrategy,
+                 update_strategy=update_strategy.NaiveUpdateStrategy,
+                 lossy_strategy=lossy_strategy.NoLossyUpdateStrategy):
+        """Delta and epsilon define our error threshold. They allow specifying
+        how often an error is acceptable within a certain range of the true
+        count.
+
+        It then allocates a table of the given type with the calculated or
+        provided width and depth, and uses the optional strategy choices to
+        implement regular or double hashing, naive or conservative update, and
+        naive or lossy counting.
         :param delta: How often (on expectation) we accept an error
         :param epsilon: What margin (on expectation) we accept for an error
         :param depth: Provide a value to override the default depth calculation
-        :param width: Provide a value to override the default width calculation.
-        :param table_class: The class of table to use in backing this CM-sketch.
-        :param hash_strategy: The hashing strategy to use (currently regular or double)
-        :param update_strategy: The updating strategy to use (currently naive or convservative)
-        :param lossy_strategy: The lossy window strategy to use (naive, no threshold, threshold of 1,
-                                threshold of window count, threshold of the square root of the window count)
+        :param width: Provide a value to override the default width calculation
+        :param table_class: The class of table to use in backing this CM-sketch
+        :param hash_strategy: The hashing strategy to use (currently regular or
+        double)
+        :param update_strategy: The updating strategy to use (currently naive
+        or convservative)
+        :param lossy_strategy: The lossy window strategy to use (naive, no
+        threshold, threshold of 1, threshold of window count, threshold of the
+        square root of the window count)
         """
 
         if depth is None:
@@ -49,7 +59,8 @@ class CountMinSketch(object):
 
         self.table = table_class(depth, width)
 
-        # iffy work-around to support receiving both a class and a pre-initialized strategy
+        # iffy work-around to support receiving both a class and a
+        # pre-initialized strategy
         if isinstance(hash_strategy, type):
             self.hash = hash_strategy(depth, width)
         else:
@@ -70,7 +81,8 @@ class CountMinSketch(object):
         """Insert an item with a given count into the CM-sketch,
         using the provided hashing, lossy counting, and updating strategies
 
-        :param item: The item to insert. Must be a number or sensibly hashable (say, a string)
+        :param item: The item to insert. Must be a number or sensibly hashable
+        (say, a string)
         :param count: The count to insert with, defaults to 1
         :return: The new minimal value of this item in the CM-sketch.
         """
@@ -82,7 +94,8 @@ class CountMinSketch(object):
         """Implement a group update of items and counts
 
         :param items: The items to update in
-        :param counts: The count of each item. If exists, assumed to be the same size as items.
+        :param counts: The count of each item. If exists, assumed to be the
+        same size as items.
         :return: None
         """
         if counts is None:
@@ -98,11 +111,13 @@ class CountMinSketch(object):
         :return: The best current estimate for how often it appeared so far
         """
         hashes = self.hash(item)
-        return min([self.table.get(i, hashes[i]) for i in range(self.table.depth)])
+        return min(
+            [self.table.get(i, hashes[i]) for i in range(self.table.depth)])
 
     def inner_product_query(self, first_item, second_item):
-        """Not expanded upon, but a simple implementation of the idea of an inner-product
-        query using a CM-sketch, as dicussed in the original paper
+        """Not expanded upon, but a simple implementation of the idea of an
+        inner-product query using a CM-sketch, as dicussed in the original
+        paper
 
         :param first_item: The first item queried
         :param second_item: The second item queried
@@ -111,7 +126,8 @@ class CountMinSketch(object):
         first_hashes = self.hash(first_item)
         second_hashes = self.hash(second_item)
 
-        return min([self.table.get(i, first_hashes[i]) * self.table.get(i, second_hashes[i])
+        return min([self.table.get(i, first_hashes[i]) *
+                    self.table.get(i, second_hashes[i])
                     for i in range(self.table.depth)])
 
 
@@ -121,16 +137,26 @@ class TopNCountMinSketch(CountMinSketch):
     Inspired in part by the following blog post:
     https://tech.shareaholic.com/2012/12/03/the-count-min-sketch-how-to-count-over-large-keyspaces-when-about-right-is-good-enough/
     """
-    def __init__(self, delta, epsilon, depth=None, width=None, n=DEFAULT_N,
-                 table_class=ListBackedSketchTable,
-                 hash_strategy=NaiveHashingStrategy,
-                 update_strategy=NaiveUpdateStrategy,
-                 lossy_strategy=NoLossyUpdateStrategy):
-        super(TopNCountMinSketch, self).__init__(delta, epsilon, depth, width,
-                                                 table_class=table_class,
-                                                 hash_strategy=hash_strategy,
-                                                 update_strategy=update_strategy,
-                                                 lossy_strategy=lossy_strategy)
+
+    def __init__(self,
+                 delta,
+                 epsilon,
+                 depth=None,
+                 width=None,
+                 n=DEFAULT_N,
+                 table_class=sketch_tables.ListBackedSketchTable,
+                 hash_strategy=hash_strategy.NaiveHashingStrategy,
+                 update_strategy=update_strategy.NaiveUpdateStrategy,
+                 lossy_strategy=lossy_strategy.NoLossyUpdateStrategy):
+        super(TopNCountMinSketch, self).__init__(
+            delta,
+            epsilon,
+            depth,
+            width,
+            table_class=table_class,
+            hash_strategy=hash_strategy,
+            update_strategy=update_strategy,
+            lossy_strategy=lossy_strategy)
         self._init_top_n(n)
 
     def _init_top_n(self, n):
@@ -140,14 +166,15 @@ class TopNCountMinSketch(CountMinSketch):
         :return: None
         """
         self.n = n
-        self.heap = MinHeap()
+        self.heap = heap.MinHeap()
         self.heap_full = False
         self.top_n = {}
 
     def insert(self, item, count=1):
         """Insert the item, and update the top-N registry.
 
-        :param item: The item to insert. Must be a number or sensibly hashable (say, a string)
+        :param item: The item to insert. Must be a number or sensibly hashable
+        (say, a string)
         :param count: The count to insert with, defaults to 1
         :return: The new minimal count for this item
         """
@@ -157,8 +184,9 @@ class TopNCountMinSketch(CountMinSketch):
 
     def _update_top_n(self, item, new_min_count):
         """Update the top-N registry for a given item.
-        The post-condition maintains that the N most recurring items so far will be in the top_n dictionary and
-        heap, and that no more than N items will be in either.
+        The post-condition maintains that the N most recurring items so far
+        will be in the top_n dictionary and heap, and that no more than N items
+        will be in either.
 
         :param item: The item just inserted.
         :param new_min_count: Its new minimal count
@@ -185,14 +213,19 @@ class TopNCountMinSketch(CountMinSketch):
 
     def most_common(self, k=None):
         """Return the most common k items, for k <= n.
-        Accepting a parameter to conform to python's Counter interface, and returning the results in their style
-        :param k: The number of top items to return, at most n, as this function was initialized
-        :return: The top k items observed by this CM sketch, and how often they were seen
+        Accepting a parameter to conform to python's Counter interface, and
+        returning the results in their style
+        :param k: The number of top items to return, at most n, as this
+        function was initialized
+        :return: The top k items observed by this CM sketch, and how often they
+        were seen
         """
         if k is None or k > self.n:
             k = self.n
 
-        return [item[::-1] for item in sorted(self.top_n.values(), reverse=True)[:k]]
+        return [item[::-1]
+                for item in sorted(
+                    self.top_n.values(), reverse=True)[:k]]
 
     def __str__(self):
         return str(self.most_common())
