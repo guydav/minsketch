@@ -17,6 +17,7 @@ Features
 - Supports tables backed by Python lists, arrays, NumPy matrices, and bitarrays
 - Supports both standard hash-per-row and a double-hashing scheme
 - Supports both regular updating and conservative updating
+- Supports a Counter - sketch hybrid for a more balanced time-memory trade-off
 - Supports a number of different lossy-counting strategies
 - Supports using a linear equation solving estimation strategy
 
