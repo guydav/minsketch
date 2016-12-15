@@ -4,7 +4,8 @@ minsketch
 A flexible implementation of several min-sketch variants.
 Here's an example usage:
 
-.. code-block::
+.. code-block:: python
+
     import minsketch
 
     # Delta and epsilon and uncertainty measures
