@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Implementation of lossy tracking strategies. I feel a little silly having the NoLossyUpdate strategy as effectively
- a dummy class - it's worth reconsidering at some point.
+"""Implementation of lossy tracking strategies.
 """
 from sketch_tables import POSITIVE_INFINITY
 
@@ -10,6 +9,7 @@ class NoLossyUpdateStrategy(object):
     This looks silly, but it's implemented as a default over always doing a
     lossy update strategy check.
     """
+
     def __call__(self, table=None):
         pass
 
@@ -18,10 +18,12 @@ class LossyUpdateStrategy(object):
     """
     A simple class implementing lossy update strategies
     """
+
     def __init__(self, gamma, threshold_func):
         """
         :param gamma: The lossy parameter, where each window is 1/gamma items
-        :param threshold_func: A function returning a threshold from a number of windows seen so far
+        :param threshold_func: A function returning a threshold from a number
+        of windows seen so far
         """
         self.gamma = gamma
         self.window_size = 1.0 / gamma
@@ -39,7 +41,8 @@ class LossyUpdateStrategy(object):
 
 
 def no_threshold_func(window_count=None):
-    """The threshold function for LCU-ALL - accepts a parameter to conform to the 'interface'
+    """The threshold function for LCU-ALL - accepts a parameter to conform to
+    the 'interface'
     :param window_count: How many windows have appeared so far
     :return: positive infinity, always
     """
@@ -47,7 +50,8 @@ def no_threshold_func(window_count=None):
 
 
 def one_threshold_func(window_count=None):
-    """The threshold function for LCU-1 - accepts a parameter to conform to the 'interface'
+    """The threshold function for LCU-1 - accepts a parameter to conform to the
+    'interface'
     :param window_count: How many windows have appeared so far
     :return: 1, always
     """
@@ -67,5 +71,4 @@ def sqrt_window_size_threshold_func(window_count):
     :param window_count: How many windows have appeared so far
     :return: the square root of the windows seen so far as a threshold
     """
-    return window_count ** 0.5
-
+    return window_count**0.5
