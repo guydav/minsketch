@@ -6,25 +6,20 @@ measure of benchmarks, of the different configurations possible.
 This is not the prettiest code ever written; but it works, and provides an easy
 way to play around with the code.
 """
-import double_hashing
-import least_squares_sketch
-import count_mean_sketch
-import count_min_sketch
-import hash_strategy
-import update_strategy
-import lossy_strategy
-import sketch_tables
-
-import re
 import copy
+import random
+import re
 from collections import Counter, OrderedDict
 from functools import partial
+from itertools import izip
 from timeit import timeit
 from asizeof import asizeof
-from itertools import izip
-from tabulate import tabulate
 from numpy import mean
-import random
+from tabulate import tabulate
+
+from minsketch import count_mean_sketch, count_min_sketch, double_hashing, \
+    hash_strategy, least_squares_sketch, lossy_strategy, sketch_tables, \
+    update_strategy
 
 COUNTER_KEY = 'counter'
 
@@ -461,13 +456,12 @@ def test_lossy_conservative_strategy(
 
 
 if __name__ == '__main__':
-    text_test('shakespeare.txt', 0.001, 10e-7)
-    test_double_hashing('shakespeare.txt', 0.001, 10e-5, 20)
-    test_to_vector()
-    test_least_squares('shakespeare.txt', 0.001, 10e-5, 10)
-    test_update_strategies('shakespeare.txt', 0.01, 10e-4, 10)
-    test_count_mean('shakespeare.txt', 0.01, 10e-4, 10)
-    test_lossy_strategy('shakespeare.txt', 0.001, 10e-5)
+    # text_test('shakespeare.txt', 0.001, 10e-7)
+    # test_double_hashing('shakespeare.txt', 0.001, 10e-5, 20)
+    # test_to_vector()
+    # test_least_squares('shakespeare.txt', 0.001, 10e-5, 10)
+    # test_update_strategies('shakespeare.txt', 0.01, 10e-4, 10)
+    # test_count_mean('shakespeare.txt', 0.01, 10e-4, 10)
+    # test_lossy_strategy('shakespeare.txt', 0.001, 10e-5)
     test_lossy_conservative_strategy('shakespeare.txt', 0.001, 10e-5)
     # TODO: implement joint-counter/CMS
-    # TODO: write documentation

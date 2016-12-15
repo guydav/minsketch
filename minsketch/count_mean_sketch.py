@@ -7,10 +7,13 @@ The design here is a little iffy - there's a fair amount of code duplication
 between the two classes. Perhaps a mixin would fit better, or changing the
 abstractions.
 """
-import count_min_sketch
 from itertools import izip
-import double_hashing
+
 from numpy import median
+
+import count_min_sketch
+import double_hashing
+
 
 # TODO: Re-consider design here at some point - Mixins? Different abstraction?
 

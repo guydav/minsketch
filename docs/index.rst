@@ -53,4 +53,4 @@ prefix@suffix where prefix = guy and suffix = minerva.kgi.edu
 License
 -------
 
-The project is licensed under the BSD license.
+The project is licensed under the MIT license.

@@ -3,14 +3,14 @@
 a Better Bloom Filter," by Kirsch and Mitzenmacher (2008):
 https://www.eecs.harvard.edu/~michaelm/postscripts/rsa2008.pdf
 """
-import sketch_tables
-import hash_strategy
-import update_strategy
-import lossy_strategy
-import count_min_sketch
-
 import math
 from gmpy2 import next_prime
+
+import count_min_sketch
+import hash_strategy
+import lossy_strategy
+import sketch_tables
+import update_strategy
 
 
 class HashPairCMSketch(count_min_sketch.TopNCountMinSketch):

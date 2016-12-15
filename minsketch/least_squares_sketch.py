@@ -3,9 +3,11 @@
 Yoon, & Zhang:
 https://www.usenix.org/legacy/event/imc05/tech/full_papers/lee/lee.pdf
 """
-import numpy
-import count_min_sketch
 from itertools import izip
+
+import numpy
+
+import count_min_sketch
 
 
 class LeastSquaresTopNSketch(count_min_sketch.TopNCountMinSketch):

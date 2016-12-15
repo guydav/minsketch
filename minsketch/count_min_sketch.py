@@ -4,16 +4,17 @@ others inherit. It also offers an implementation of a count-min sketch that
 keeps track of some number of most commonly recurring items.
 """
 
-import sketch_tables
-import heap
-import hash_strategy
-import update_strategy
-import lossy_strategy
-
 import math
 from itertools import izip
 
-DEFAULT_N = 10
+import hash_strategy
+import heap
+import lossy_strategy
+import sketch_tables
+import update_strategy
+
+
+DEFAULT_N = 100
 
 
 class CountMinSketch(object):
