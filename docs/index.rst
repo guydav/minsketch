@@ -4,6 +4,18 @@ minsketch
 A flexible implementation of several min-sketch variants.
 Here's an example usage:
 
+Features
+--------
+
+- Supports tables backed by Python lists, arrays, NumPy matrices, and bitarrays
+- Supports both standard hash-per-row and a double-hashing scheme
+- Supports both regular updating and conservative updating
+- Supports a number of different lossy-counting strategies
+- Supports using a linear equation solving estimation strategy
+
+Example
+-------
+
 .. code-block:: python
 
     import minsketch
@@ -40,14 +52,7 @@ Here's an example usage:
     # Query the ten most common elements:
     print(sketch.most_common(10))
 
-Features
---------
 
-- Supports tables backed by Python lists, arrays, NumPy matrices, and bitarrays
-- Supports both standard hash-per-row and a double-hashing scheme
-- Supports both regular updating and conservative updating
-- Supports a number of different lossy-counting strategies
-- Supports using a linear equation solving estimation strategy
 
 Reference
 ---------
@@ -63,14 +68,14 @@ TODO
 ----
 
 - Add a hybrid Counter into Count-Min sketch object to enjoy the best of both worlds
-- PyPi installation
+- Add to PyPi.
 - Add some benchmark results to the documentation
 - Consider adding some benchmark graphs?
 
 Installation
 ------------
 
-There's no standardized installation procedure yet. In the meantime, feel free to check it out from github (link below) and play around with it. 
+Pull from github, run setup.py, rejoice. Will be added to PyPi soon.
 
 Contribute
 ----------
