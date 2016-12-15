@@ -9,6 +9,7 @@ way to play around with the code.
 import copy
 import random
 import re
+import os.path
 from collections import Counter, OrderedDict
 from functools import partial
 from itertools import izip
@@ -22,6 +23,10 @@ from minsketch import count_mean_sketch, count_min_sketch, double_hashing, \
     update_strategy
 
 COUNTER_KEY = 'counter'
+DEFAULT_TEST_DATA_FILE = 'hamlet.txt'
+DEFAULT_EPSILON = 0.001
+DEFAULT_DELTA = 10 ** -4
+DEFAULT_N = 20
 
 
 def basic_count_min_test():
@@ -52,19 +57,13 @@ def basic_count_min_test():
     print(cms)
 
 
-def read_words(text_file_name):
-    words = re.findall(r'\w+', open(text_file_name).read().lower())
-    print('{length} words in the document'.format(length=len(words)))
-    return words
-
-
-def text_test(text_file_name,
-              epsilon,
-              delta,
+def text_test(words_file=DEFAULT_TEST_DATA_FILE,
+              epsilon=DEFAULT_EPSILON,
+              delta=DEFAULT_DELTA,
               n=count_min_sketch.DEFAULT_N,
               n_factor=5):
-    words = re.findall(r'\w+', open(text_file_name).read().lower())
-    print('{length} words in the document'.format(length=len(words)))
+
+    words = read_words(words_file)
 
     n *= n_factor
     sketches = OrderedDict(
@@ -131,9 +130,6 @@ def run_single_benchmark(sketches, benchmark_func):
 
 
 def most_common_comparison(sketches, n):
-    # top_10s = run_single_benchmark(sketches,
-    #                                lambda sketch: sketch.most_common(n / 2))
-
     counter = sketches[COUNTER_KEY]
     mc = {key: value for key, value in counter.most_common(n)}
     top_n_by_sketch = OrderedDict()
@@ -167,14 +163,13 @@ def most_common_comparison(sketches, n):
     print(tabulate(percent_results, header, tablefmt='fancy_grid'))
 
 
-def test_double_hashing(text_file_name,
-                        epsilon,
-                        delta,
+def test_double_hashing(words_file=DEFAULT_TEST_DATA_FILE,
+                        epsilon=DEFAULT_EPSILON,
+                        delta=DEFAULT_DELTA,
                         n=count_min_sketch.DEFAULT_N,
                         table_class=sketch_tables.ArrayBackedSketchTable):
-    words = re.findall(r'\w+', open(text_file_name).read().lower())
-    print('{length} words in the document'.format(length=len(words)))
 
+    words = read_words(words_file)
     sketches = OrderedDict(
         array=count_min_sketch.TopNCountMinSketch(
             delta, epsilon, table_class=table_class),
@@ -210,14 +205,12 @@ def test_to_vector():
         print(v)
 
 
-def test_least_squares(text_file_name,
-                       epsilon,
-                       delta,
+def test_least_squares(words_file=DEFAULT_TEST_DATA_FILE,
+                       epsilon=DEFAULT_EPSILON,
+                       delta=DEFAULT_DELTA,
                        n=count_min_sketch.DEFAULT_N,
                        table_class=sketch_tables.ArrayBackedSketchTable):
-    words = re.findall(r'\w+', open(text_file_name).read().lower())
-    print('{length} words in the document'.format(length=len(words)))
-
+    words = read_words(words_file)
     sketches = OrderedDict(
         array=count_min_sketch.TopNCountMinSketch(
             delta, epsilon, table_class=table_class),
@@ -233,15 +226,15 @@ def test_least_squares(text_file_name,
     most_common_comparison(sketches, n)
 
 
-def test_update_strategies(text_file_name,
-                           epsilon,
-                           delta,
+def test_update_strategies(words_file=DEFAULT_TEST_DATA_FILE,
+                           epsilon=DEFAULT_EPSILON,
+                           delta=DEFAULT_DELTA,
                            n=count_min_sketch.DEFAULT_N,
-                           table_class=sketch_tables.ArrayBackedSketchTable):
-    words = re.findall(r'\w+', open(text_file_name).read().lower())
-    print('{length} words in the document'.format(length=len(words)))
-    # Using 5 * n here to account for different values in the exact top n
-    n *= 5
+                           table_class=sketch_tables.ArrayBackedSketchTable,
+                           n_factor=5):
+    words = read_words(words_file)
+    # Using a factor here to account for different values in the exact top n
+    n *= n_factor
 
     sketches = OrderedDict(
         array=count_min_sketch.TopNCountMinSketch(
@@ -270,15 +263,15 @@ def test_update_strategies(text_file_name,
     most_common_comparison(sketches, n)
 
 
-def test_count_mean(text_file_name,
-                    epsilon,
-                    delta,
+def test_count_mean(words_file=DEFAULT_TEST_DATA_FILE,
+                    epsilon=DEFAULT_EPSILON,
+                    delta=DEFAULT_DELTA,
                     n=count_min_sketch.DEFAULT_N,
-                    table_class=sketch_tables.ArrayBackedSketchTable):
-    words = re.findall(r'\w+', open(text_file_name).read().lower())
-    print('{length} words in the document'.format(length=len(words)))
-    # Using 5 * n here to account for different values in the exact top n
-    n *= 5
+                    table_class=sketch_tables.ArrayBackedSketchTable,
+                    n_factor=5):
+    words = read_words(words_file)
+    # Using a factor here to account for different values in the exact top n
+    n *= n_factor
 
     sketches = OrderedDict(
         hash_pair=double_hashing.HashPairCMSketch(
@@ -311,18 +304,16 @@ def test_count_mean(text_file_name,
     most_common_comparison(sketches, n)
 
 
-def test_lossy_strategy(text_file_name,
-                        epsilon,
-                        delta,
+def test_lossy_strategy(words_file=DEFAULT_TEST_DATA_FILE,
+                        epsilon=DEFAULT_EPSILON,
+                        delta=DEFAULT_DELTA,
                         gamma=0.01,
                         bucket_size=100,
                         n=count_min_sketch.DEFAULT_N,
                         table_class=sketch_tables.ArrayBackedSketchTable):
+    words = read_words(words_file)
     # To test lossy strategies, we process the files similarly as before
     # And compare by buckets, akin to Goyal and Daumé (2010)
-    words = re.findall(r'\w+', open(text_file_name).read().lower())
-    print('{length} words in the document'.format(length=len(words)))
-    # Using 5 * n here to account for different values in the exact top n
     counter = Counter()
     sketches = OrderedDict(
         no_lossy=count_min_sketch.TopNCountMinSketch(
@@ -398,17 +389,17 @@ def benchmark_by_buckets(bucket_size, sketches):
 
 
 def test_lossy_conservative_strategy(
-        text_file_name,
-        epsilon,
-        delta,
+        words_file=DEFAULT_TEST_DATA_FILE,
+        epsilon=DEFAULT_EPSILON,
+        delta=DEFAULT_DELTA,
         gamma=0.01,
         bucket_size=100,
         n=count_min_sketch.DEFAULT_N,
         table_class=sketch_tables.ArrayBackedSketchTable):
+
     # To test lossy strategies, we process the files similarly as before
     # And compare by buckets, akin to Goyal and Daumé (2010)
-    words = read_words(text_file_name)
-    # Using 5 * n here to account for different values in the exact top n
+    words = read_words(words_file)
     counter = Counter()
     sketches = OrderedDict(
         no_lossy=count_min_sketch.TopNCountMinSketch(
@@ -455,13 +446,9 @@ def test_lossy_conservative_strategy(
     benchmark_by_buckets(bucket_size, sketches)
 
 
-if __name__ == '__main__':
-    # text_test('shakespeare.txt', 0.001, 10e-7)
-    # test_double_hashing('shakespeare.txt', 0.001, 10e-5, 20)
-    # test_to_vector()
-    # test_least_squares('shakespeare.txt', 0.001, 10e-5, 10)
-    # test_update_strategies('shakespeare.txt', 0.01, 10e-4, 10)
-    # test_count_mean('shakespeare.txt', 0.01, 10e-4, 10)
-    # test_lossy_strategy('shakespeare.txt', 0.001, 10e-5)
-    test_lossy_conservative_strategy('shakespeare.txt', 0.001, 10e-5)
-    # TODO: implement joint-counter/CMS
+def read_words(test_data_file):
+    path_with_dir = os.path.join(os.path.dirname(__file__), test_data_file)
+    words = re.findall(r'\w+', open(path_with_dir).read().lower())
+    print('{length} words in the document'.format(length=len(words)))
+    return words
+
