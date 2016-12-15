@@ -14,7 +14,7 @@ epsilon = 0.001
 
 # This implementation supports several different backing table classes
 # For most purposes, the Python array makes for a good default:
-table_class = minsketch.table_classes.ArrayBackedSketchTable
+table_class = minsketch.sketch_tables.ArrayBackedSketchTable
 
 # If you are willing to only support positive updates (no deletions)
 # You should use conservative updates, as significantly reduces error:

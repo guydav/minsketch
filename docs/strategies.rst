@@ -6,7 +6,7 @@ Hashing Strategies
 
 hash_strategy.py
 
-.. automodule:: hash_strategy
+.. automodule:: minsketch.hash_strategy
     :members:
 
 Updating Strategies
@@ -14,7 +14,7 @@ Updating Strategies
 
 update_strategy.py
 
-.. automodule:: update_strategy
+.. automodule:: minsketch.update_strategy
     :members:
 
 Lossy-Counting Window Strategies
@@ -22,5 +22,5 @@ Lossy-Counting Window Strategies
 
 lossy_strategy.py
 
-.. automodule:: lossy_strategy
+.. automodule:: minsketch.lossy_strategy
     :members:
