@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""A testing / benchmarking code. This does not provide any regression or unit
+"""Testing / benchmarking code. This does not provide any regression or unit
 tests, at least not so far. It does provide basic system tests, and some
 measure of benchmarks, of the different configurations possible.
 
@@ -20,13 +20,20 @@ from tabulate import tabulate
 
 from minsketch import count_mean_sketch, count_min_sketch, double_hashing, \
     hash_strategy, least_squares_sketch, lossy_strategy, sketch_tables, \
-    update_strategy
+    update_strategy, counter_sketch_hybrid
 
 COUNTER_KEY = 'counter'
 DEFAULT_TEST_DATA_FILE = 'hamlet.txt'
 DEFAULT_EPSILON = 0.001
 DEFAULT_DELTA = 10 ** -4
 DEFAULT_N = 20
+
+
+def read_words(test_data_file):
+    path_with_dir = os.path.join(os.path.dirname(__file__), test_data_file)
+    words = re.findall(r'\w+', open(path_with_dir).read().lower())
+    print('{length} words in the document'.format(length=len(words)))
+    return words
 
 
 def basic_count_min_test():
@@ -112,6 +119,10 @@ def benchmark(words, sketches):
         elif isinstance(sk, double_hashing.MultiHashPairTopNCMSketch):
             results['Depth'].append(sk.sketches[0].table.depth)
             results['Width'].append(sk.sketches[0].table.width)
+
+        elif isinstance(sk, counter_sketch_hybrid.SketchCounterHybrid):
+            results['Depth'].append(sk.sketch.table.depth)
+            results['Width'].append(sk.sketch.table.width)
 
         else:
             results['Depth'].append(sk.table.depth)
@@ -446,9 +457,50 @@ def test_lossy_conservative_strategy(
     benchmark_by_buckets(bucket_size, sketches)
 
 
-def read_words(test_data_file):
-    path_with_dir = os.path.join(os.path.dirname(__file__), test_data_file)
-    words = re.findall(r'\w+', open(path_with_dir).read().lower())
-    print('{length} words in the document'.format(length=len(words)))
-    return words
+def test_sketch_hybrid(words_file=DEFAULT_TEST_DATA_FILE,
+                       epsilon=DEFAULT_EPSILON,
+                       delta=DEFAULT_DELTA,
+                       n=count_min_sketch.DEFAULT_N,
+                       table_class=sketch_tables.ArrayBackedSketchTable,
+                       n_factor=5):
+    words = read_words(words_file)
+    # Using a factor here to account for different values in the exact top n
+    n *= n_factor
+
+    sketches = OrderedDict(
+        array_conservative=count_min_sketch.TopNCountMinSketch(
+            delta,
+            epsilon,
+            n=n,
+            table_class=table_class,
+            update_strategy=update_strategy.ConservativeUpdateStrategy),
+        array_hash_pair_conservative=double_hashing.HashPairCMSketch(
+            delta,
+            epsilon,
+            n=n,
+            table_class=table_class,
+            update_strategy=update_strategy.ConservativeUpdateStrategy),
+        hybrid_conservative=counter_sketch_hybrid.SketchCounterHybrid(
+            count_min_sketch.TopNCountMinSketch(
+                delta,
+                epsilon,
+                n=n,
+                table_class=table_class,
+                update_strategy=update_strategy.ConservativeUpdateStrategy)),
+        hybrid_hash_pair_conservative=counter_sketch_hybrid.SketchCounterHybrid(
+            double_hashing.HashPairCMSketch(
+                delta,
+                epsilon,
+                n=n,
+                table_class=table_class,
+                update_strategy=update_strategy.ConservativeUpdateStrategy)),
+        counter=Counter())
+
+    benchmark(words, sketches)
+    most_common_comparison(sketches, n)
+
+if __name__ == '__main__':
+    test_sketch_hybrid('shakespeare.txt')
+
+
 

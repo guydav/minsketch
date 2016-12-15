@@ -26,6 +26,8 @@ Example
 .. code-block:: python
 
     import minsketch
+    from functools import partial
+    from timeit import timeit
 
     # Delta and epsilon and uncertainty measures
     # Count-min sketches are within epsilon of the true value
@@ -54,12 +56,19 @@ Example
     # Update the sketch with some data
     from numpy import random
     data = random.randint(0, 1000, 100000)
-    sketch.update(data)
+    print(timeit(partial(sketch.update, data), number=1))
 
     # Query the ten most common elements:
     print(sketch.most_common(10))
 
+    # For a performance boost, you can also use a Counter-Sketch Hybrid
+    hybrid = minsketch.counter_sketch_hybrid.SketchCounterHybrid(
+        minsketch.double_hashing.HashPairCMSketch(
+        delta, epsilon, table_class=table_class,
+        update_strategy=update_strategy, lossy_strategy=lossy_strategy))
 
+    print(timeit(partial(hybrid.update, data), number=1))
+    print(hybrid.most_common(10))
 
 Reference
 ---------
