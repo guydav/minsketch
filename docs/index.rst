@@ -2,7 +2,14 @@ minsketch
 =========
 
 A flexible implementation of several min-sketch variants.
-Here's an example usage:
+
+A count-min sketch is a probabilistic counting data structure - to save
+space, we allow for some known probability of counting error. This
+allows to summarize a data stream with limited space, without growing
+indefinitely as we see more and more data.
+
+For a longer description, and some of the relevant papers, see:
+https://sites.google.com/site/countminsketch/
 
 Features
 --------
