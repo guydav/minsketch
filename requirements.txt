@@ -1,0 +1,4 @@
+bitarray
+gmpy2
+numpy
+tabulate
