@@ -11,4 +11,5 @@ setup(name='minsketch',
       author_email='guy@minerva.kgi.edu',
       license='MIT',
       packages=['minsketch'],
-      zip_safe=True,)
+      zip_safe=True,
+      python_requires='>=3.10')

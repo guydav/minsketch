@@ -2,7 +2,7 @@
 """An implementation of naive and conservative update strategies.
 Each update strategy also implements an error-estimate, used by count-min-mean.
 """
-from itertools import izip
+
 
 
 class NaiveUpdateStrategy(object):
@@ -39,7 +39,7 @@ class NaiveUpdateStrategy(object):
 
     def _error_estimates(self, table, values, baselines):
         return [(baseline - value) / (table.width - 1)
-                for value, baseline in izip(values, baselines)]
+                for value, baseline in zip(values, baselines)]
 
 
 class ConservativeUpdateStrategy(NaiveUpdateStrategy):
@@ -68,7 +68,7 @@ class ConservativeUpdateStrategy(NaiveUpdateStrategy):
         current_values = [table.get(i, hashes[i]) for i in range(table.depth)]
         new_current_min = min(current_values) + count
         [table.set(i, hashes[i], new_current_min)
-         for i, value in izip(range(table.depth), current_values)
+         for i, value in zip(range(table.depth), current_values)
          if value < new_current_min]
 
         return new_current_min

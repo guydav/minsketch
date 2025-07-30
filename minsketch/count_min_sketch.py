@@ -5,13 +5,12 @@ keeps track of some number of most commonly recurring items.
 """
 
 import math
-from itertools import izip
 
-import hash_strategy
-import heap
-import lossy_strategy
-import sketch_tables
-import update_strategy
+from . import hash_strategy
+from . import heap
+from . import lossy_strategy
+from . import sketch_tables
+from . import update_strategy
 
 
 DEFAULT_N = 100
@@ -103,7 +102,7 @@ class CountMinSketch(object):
             [self.insert(item) for item in items]
 
         else:
-            [self.insert(item, count) for item, count in izip(items, counts)]
+            [self.insert(item, count) for item, count in zip(items, counts)]
 
     def get(self, item):
         """Retrieve the current minimum value associated with an item

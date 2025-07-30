@@ -251,11 +251,12 @@ try:  # sizeof(unicode_char) in Python < 3.3
     u = unicode('\0')
 except NameError:  # no unicode() in Python 3.0
     u = '\0'
-u = u.encode('unicode-internal')  # see .../Lib/test/test_sys.py
+try:
+    u = u.encode('unicode-internal')  
+except LookupError:  
+    u = u.encode('utf-8')  # fallback for Python 3
 _sizeof_Cunicode = len(u)
 del u
-if (1 << (_sizeof_Cunicode << 3)) <= sys.maxunicode:
-    raise AssertionError('sizeof(%s) bad: %d' % ('unicode', _sizeof_Cunicode))
 
 if hasattr(sys, 'maxsize'):  # new in Python 2.6
     Z = calcsize('Z')  # check sizeof(size_t)

@@ -12,7 +12,7 @@ import re
 import os.path
 from collections import Counter, OrderedDict
 from functools import partial
-from itertools import izip
+
 from timeit import timeit
 from asizeof import asizeof
 from numpy import mean
@@ -46,7 +46,7 @@ def basic_count_min_test():
 
     cms = count_min_sketch.TopNCountMinSketch(10e-7, 0.005)
 
-    for (number, count) in izip(numbers, counts):
+    for (number, count) in zip(numbers, counts):
         cms.insert(number, count)
 
     print(cms.table.depth, cms.table.width, cms.table.depth * cms.table.width)
@@ -97,7 +97,7 @@ def text_test(words_file=DEFAULT_TEST_DATA_FILE,
         counter=Counter())
 
     benchmark(words, sketches)
-    most_common_comparison(sketches, n / n_factor)
+    most_common_comparison(sketches, int(n / n_factor))
 
 
 def benchmark(words, sketches):
@@ -198,7 +198,7 @@ def test_to_vector():
     depth = 2
     width = 10
     count = depth * width
-    counts = [random.randint(1, 10) for _ in xrange(count)]
+    counts = [random.randint(1, 10) for _ in range(count)]
 
     vectors = []
     for table_class in (sketch_tables.ListBackedSketchTable,
@@ -368,7 +368,7 @@ def benchmark_by_buckets(bucket_size, sketches):
     results_by_bucket = [
         {key: []
          for key in sketches if key != COUNTER_KEY}
-        for _ in range(counter.most_common(1)[0][1] / bucket_size + 1)
+        for _ in range(counter.most_common(1)[0][1] // bucket_size + 1)
     ]
     for item in counter:
         for key in sketches:
@@ -376,7 +376,7 @@ def benchmark_by_buckets(bucket_size, sketches):
                 continue
             count = counter[item]
 
-            results_by_bucket[count / bucket_size][key].append(
+            results_by_bucket[count // bucket_size][key].append(
                 (sketches[key].get(item) - count))
 
     # Turn into average

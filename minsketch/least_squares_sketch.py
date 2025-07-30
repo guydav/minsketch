@@ -3,11 +3,11 @@
 Yoon, & Zhang:
 https://www.usenix.org/legacy/event/imc05/tech/full_papers/lee/lee.pdf
 """
-from itertools import izip
+
 
 import numpy
 
-import count_min_sketch
+from . import count_min_sketch
 
 
 class LeastSquaresTopNSketch(count_min_sketch.TopNCountMinSketch):
@@ -56,7 +56,7 @@ class LeastSquaresTopNSketch(count_min_sketch.TopNCountMinSketch):
 
         for l in range(len(self.top_n)):
             item = largest[l]
-            for table_index, hash_index in izip(
+            for table_index, hash_index in zip(
                     range(self.table.depth), self.hash(item)):
                 a_matrix[table_index * self.table.width + hash_index, l] = 1
 

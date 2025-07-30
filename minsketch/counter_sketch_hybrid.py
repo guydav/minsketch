@@ -5,7 +5,6 @@ indefinite amounts of space, we create a hybrid - saving new data into a
 Counter as it arrives, and batch-updating the count-min sketch.
 """
 from collections import Counter
-from itertools import izip
 
 DEFAULT_BATCH_SIZE = 10 ** 4
 
@@ -31,7 +30,7 @@ class SketchCounterHybrid(object):
         self.current_batch = 0
 
     def _digest_counter(self):
-        self.sketch.update(*zip(*self.counter.iteritems()))
+        self.sketch.update(*zip(*self.counter.items()))
         self.counter = Counter()
         self.current_batch = 0
 
@@ -47,7 +46,7 @@ class SketchCounterHybrid(object):
             [self.insert(item) for item in items]
 
         else:
-            [self.insert(item, count) for item, count in izip(items, counts)]
+            [self.insert(item, count) for item, count in zip(items, counts)]
 
     def get(self, item):
         counter_out = item in self.counter and self.counter.get(item) or 0

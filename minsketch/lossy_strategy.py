@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Implementation of lossy tracking strategies.
 """
-from sketch_tables import POSITIVE_INFINITY
+from .sketch_tables import POSITIVE_INFINITY
 
 
 class NoLossyUpdateStrategy(object):

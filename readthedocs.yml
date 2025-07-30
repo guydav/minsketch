@@ -1,7 +1,7 @@
 requirements_file: requirements_docs.txt
 
 python:
-  version: 2.7
+  version: 3.10
 
 formats:
   - none
